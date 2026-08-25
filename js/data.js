@@ -40,7 +40,17 @@ const CATEGORIES = [
 //  trailerUrl   : lien YouTube de la bande-annonce (optionnel)
 //  criticScore  : { source, score, url } note presse/agrégateur (optionnel)
 //  reviews      : [{ author, rating (0-10 ou null), comment }] nos avis (optionnel)
-//  roadmap      : [{ date, title, description }] suivi des mises à jour (optionnel)
+//  roadmap      : suivi des versions du jeu (optionnel). Chaque entrée :
+//                   date        : texte affiché (ex: "9 septembre 2026")
+//                   dateISO     : "AAAA-MM-JJ" si la date est connue. C'est ce
+//                                 qui permet au site de calculer "dans X jours"
+//                                 et de mettre la MAJ en évidence. Omettre si
+//                                 la date n'est pas annoncée.
+//                   title       : nom de la mise à jour
+//                   description : ce que ça change pour nous
+//                   major       : true si c'est une MAJ importante (1.0, wipe,
+//                                 gros DLC). Une MAJ majeure encore à venir est
+//                                 signalée en haut du site et sur la carte.
 
 const GAMES_DATA = [
   // ---------------------------------------------------------------
@@ -73,7 +83,16 @@ const GAMES_DATA = [
           "Le 2 est sorti, c'est une vraie histoire avec une fin, environnement un peu stressant, je pense que ça peut être pas mal du tout.",
       },
     ],
-    roadmap: [],
+    roadmap: [
+      {
+        date: "Février 2024",
+        dateISO: "2024-02-22",
+        major: true,
+        title: "Sortie 1.0 — développement terminé",
+        description:
+          "Plus que des correctifs depuis. Aucune MAJ ne viendra casser notre partie entre deux week-ends.",
+      },
+    ],
   },
   {
     id: "core-keeper",
@@ -104,9 +123,11 @@ const GAMES_DATA = [
     ],
     roadmap: [
       {
-        date: "Annoncée",
+        date: "Date non annoncée",
+        major: true,
         title: "Roadmap en trois gros contenus",
-        description: "Publiée il y a deux semaines par les développeurs.",
+        description:
+          "Publiée il y a deux semaines par les développeurs. Pas de date connue : à surveiller, mais ça ne bloque pas une partie maintenant.",
       },
     ],
   },
@@ -165,7 +186,15 @@ const GAMES_DATA = [
     trailerUrl: "",
     criticScore: null,
     reviews: [],
-    roadmap: [],
+    roadmap: [
+      {
+        date: "Récemment",
+        major: true,
+        title: "Build 42 (stable) — multi corrigé",
+        description:
+          "Déjà sortie. Conséquence pour nous : une partie des mods n'a pas encore été republiée pour cette build.",
+      },
+    ],
   },
   {
     id: "7-days-to-die",
@@ -238,10 +267,12 @@ const GAMES_DATA = [
     reviews: [],
     roadmap: [
       {
-        date: "9 septembre",
+        date: "9 septembre 2026",
+        dateISO: "2026-09-09",
+        major: true,
         title: "Sortie de la 1.0",
         description:
-          "Les développeurs conseillent de repartir sur une carte neuve.",
+          "Les développeurs conseillent de repartir sur une carte neuve. Toute partie lancée avant est à considérer comme jetable.",
       },
     ],
   },

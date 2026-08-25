@@ -50,6 +50,53 @@ main {
   padding: 0 1.5rem 4rem;
 }
 
+/* Bandeau des mises à jour majeures imminentes */
+.update-alert {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 92, 124, 0.14),
+    rgba(255, 184, 76, 0.08)
+  );
+  border: 1px solid rgba(255, 92, 124, 0.45);
+  border-left: 4px solid var(--danger);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.update-alert h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  color: var(--danger);
+}
+
+.update-alert ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.update-alert li + li {
+  margin-top: 0.5rem;
+}
+
+.alert-game {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.alert-game:hover {
+  color: var(--accent-2);
+}
+
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -179,6 +226,32 @@ main {
 .badge.status-ecarte {
   color: var(--text-muted);
   text-decoration: line-through;
+}
+
+.game-card.has-major-update {
+  border-color: rgba(255, 92, 124, 0.5);
+}
+
+.card-update {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: 0.75rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.card-update.imminent {
+  background: rgba(255, 92, 124, 0.12);
+  border-color: rgba(255, 92, 124, 0.45);
+  color: var(--danger);
+}
+
+.card-update strong {
+  font-size: 0.8rem;
 }
 
 .card-desc {
@@ -367,10 +440,66 @@ main {
   border-bottom: none;
 }
 
+.roadmap-item.imminent {
+  background: rgba(255, 92, 124, 0.1);
+  border-left: 3px solid var(--danger);
+  border-radius: 6px;
+  padding-left: 0.6rem;
+}
+
+.roadmap-item.past {
+  opacity: 0.6;
+}
+
 .roadmap-date {
   font-size: 0.8rem;
   color: var(--text-muted);
-  min-width: 90px;
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+.roadmap-item.imminent .roadmap-date {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.roadmap-item p {
+  margin: 0.3rem 0 0;
+  font-size: 0.85rem;
+}
+
+.roadmap-major,
+.roadmap-pill {
+  display: inline-block;
+  font-size: 0.68rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.roadmap-major {
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.roadmap-pill {
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.roadmap-pill.imminent {
+  border-color: var(--danger);
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.roadmap-pill.past {
+  border-style: dashed;
 }
 
 .muted {

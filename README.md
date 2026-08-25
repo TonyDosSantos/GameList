@@ -12,6 +12,12 @@ presse, nos avis perso et la roadmap des mises à jour à venir.
 Recherche, filtres (catégorie, genre, plateforme, statut, qui a proposé) et tri
 sont dispos en haut de page. Un clic sur une carte ouvre la fiche complète.
 
+**Mises à jour importantes** : une MAJ majeure à venir (une 1.0, un wipe, un
+gros DLC — bref, ce qui peut nous obliger à jeter une partie en cours) est
+signalée par un bandeau en haut de page avec un compte à rebours, et sur la
+carte du jeu concerné. Voir [CONTRIBUTING.md](CONTRIBUTING.md) pour en
+déclarer une.
+
 ## Voir le site
 
 ### En ligne (GitHub Pages)

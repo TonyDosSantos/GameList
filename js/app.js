@@ -7,6 +7,7 @@ const STATUS_LABELS = {
 };
 
 const els = {
+  alert: document.getElementById("update-alert"),
   sections: document.getElementById("game-sections"),
   empty: document.getElementById("empty-state"),
   count: document.getElementById("results-count"),
@@ -54,6 +55,42 @@ function averageRating(game) {
   if (rated.length === 0) return null;
   const sum = rated.reduce((acc, r) => acc + r.rating, 0);
   return Math.round((sum / rated.length) * 10) / 10;
+}
+
+// --- Mises à jour à venir -------------------------------------------------
+
+// Seuil (en jours) en dessous duquel une MAJ majeure est considérée imminente
+// et signalée en rouge plutôt qu'en simple "à venir".
+const IMMINENT_DAYS = 60;
+
+function today() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+// Nombre de jours entre aujourd'hui et une date ISO. null si pas de date.
+function daysUntil(dateISO) {
+  if (!dateISO) return null;
+  const target = new Date(dateISO + "T00:00:00");
+  if (Number.isNaN(target.getTime())) return null;
+  return Math.round((target - today()) / 86400000);
+}
+
+function formatCountdown(days) {
+  if (days === 0) return "aujourd'hui";
+  if (days === 1) return "demain";
+  if (days > 0) return `dans ${days} jours`;
+  return "déjà sortie";
+}
+
+// La MAJ majeure à venir la plus proche pour un jeu, ou null.
+function nextMajorUpdate(game) {
+  const upcoming = (game.roadmap || [])
+    .map((entry) => ({ entry, days: daysUntil(entry.dateISO) }))
+    .filter((r) => r.entry.major && r.days !== null && r.days >= 0)
+    .sort((a, b) => a.days - b.days);
+  return upcoming.length ? upcoming[0] : null;
 }
 
 function extractYoutubeId(url) {
@@ -116,8 +153,23 @@ function renderCard(game) {
   });
 
   const rating = averageRating(game);
+  const nextMajor = nextMajorUpdate(game);
+
+  if (nextMajor) card.classList.add("has-major-update");
+
+  const majorBanner = nextMajor
+    ? `<div class="card-update ${
+        nextMajor.days <= IMMINENT_DAYS ? "imminent" : ""
+      }">
+         <strong>${escapeHtml(nextMajor.entry.title)}</strong>
+         <span>${escapeHtml(nextMajor.entry.date)} · ${formatCountdown(
+        nextMajor.days
+      )}</span>
+       </div>`
+    : "";
 
   card.innerHTML = `
+    ${majorBanner}
     <h3>${escapeHtml(game.name)}</h3>
     <div class="badge-row">
       <span class="badge status-${game.status}">${
@@ -143,6 +195,52 @@ function renderCard(game) {
     </div>
   `;
   return card;
+}
+
+// Bandeau en haut de page : les MAJ majeures imminentes, tous jeux confondus.
+// Indépendant des filtres — c'est une info qui ne doit pas pouvoir être ratée.
+function renderUpdateAlert() {
+  const upcoming = GAMES_DATA.map((game) => ({
+    game,
+    next: nextMajorUpdate(game),
+  }))
+    .filter((r) => r.next && r.next.days <= IMMINENT_DAYS)
+    .sort((a, b) => a.next.days - b.next.days);
+
+  if (upcoming.length === 0) {
+    els.alert.innerHTML = "";
+    els.alert.classList.add("hidden");
+    return;
+  }
+
+  els.alert.classList.remove("hidden");
+  els.alert.innerHTML = `
+    <h2>⚠️ ${upcoming.length} mise${upcoming.length > 1 ? "s" : ""} à jour
+      majeure${upcoming.length > 1 ? "s" : ""} à venir</h2>
+    <ul>
+      ${upcoming
+        .map(
+          ({ game, next }) => `
+        <li>
+          <button type="button" class="alert-game" data-game-id="${escapeHtml(
+            game.id
+          )}">${escapeHtml(game.name)}</button>
+          — ${escapeHtml(next.entry.title)},
+          <strong>${escapeHtml(next.entry.date)}</strong>
+          (${formatCountdown(next.days)}).
+          ${escapeHtml(next.entry.description || "")}
+        </li>`
+        )
+        .join("")}
+    </ul>
+  `;
+
+  els.alert.querySelectorAll(".alert-game").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const game = GAMES_DATA.find((g) => g.id === btn.dataset.gameId);
+      if (game) openModal(game);
+    });
+  });
 }
 
 function render() {
@@ -238,17 +336,48 @@ function openModal(game) {
 
   const roadmapHtml =
     game.roadmap && game.roadmap.length
-      ? game.roadmap
-          .map(
-            (r) => `
-        <div class="roadmap-item">
+      ? [...game.roadmap]
+          // Les MAJ à venir d'abord (la plus proche en tête), le passé ensuite.
+          .sort((a, b) => {
+            const da = daysUntil(a.dateISO);
+            const db = daysUntil(b.dateISO);
+            const rank = (d) => (d === null ? 1 : d >= 0 ? 0 : 2);
+            if (rank(da) !== rank(db)) return rank(da) - rank(db);
+            if (da === null || db === null) return 0;
+            return da >= 0 ? da - db : db - da;
+          })
+          .map((r) => {
+            const days = daysUntil(r.dateISO);
+            const isUpcoming = days !== null && days >= 0;
+            const isImminent = isUpcoming && days <= IMMINENT_DAYS;
+            const classes = [
+              "roadmap-item",
+              r.major ? "major" : "",
+              isImminent ? "imminent" : "",
+              days !== null && days < 0 ? "past" : "",
+            ]
+              .filter(Boolean)
+              .join(" ");
+
+            const pill = isUpcoming
+              ? `<span class="roadmap-pill ${
+                  isImminent ? "imminent" : ""
+                }">${formatCountdown(days)}</span>`
+              : days !== null
+              ? `<span class="roadmap-pill past">déjà sortie</span>`
+              : `<span class="roadmap-pill">date inconnue</span>`;
+
+            return `
+        <div class="${classes}">
           <div class="roadmap-date">${escapeHtml(r.date || "")}</div>
           <div>
             <strong>${escapeHtml(r.title || "")}</strong>
+            ${r.major ? `<span class="roadmap-major">majeure</span>` : ""}
+            ${pill}
             <p class="muted">${escapeHtml(r.description || "")}</p>
           </div>
-        </div>`
-          )
+        </div>`;
+          })
           .join("")
       : `<p class="muted">Aucune roadmap renseignée.</p>`;
 
@@ -296,7 +425,7 @@ function openModal(game) {
     </div>
 
     <div class="modal-section">
-      <h4>Roadmap</h4>
+      <h4>Roadmap des versions</h4>
       ${roadmapHtml}
     </div>
   `;
@@ -335,4 +464,5 @@ populateSelect(els.genre, uniqueValues(GAMES_DATA, (g) => g.genre));
 populateSelect(els.platform, uniqueValues(GAMES_DATA, (g) => g.platforms));
 populateSelect(els.proposedBy, uniqueValues(GAMES_DATA, (g) => g.proposedBy));
 
+renderUpdateAlert();
 render();

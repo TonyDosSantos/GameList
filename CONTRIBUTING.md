@@ -26,7 +26,13 @@ ou non.
     { author: "Tony", rating: 8, comment: "Bien fun en soirée." }
   ],
   roadmap: [
-    { date: "2026-10", title: "Nouveau DLC", description: "..." }
+    {
+      date: "9 septembre 2026",   // texte affiché
+      dateISO: "2026-09-09",       // date machine, pour le compte à rebours
+      major: true,                  // MAJ importante (1.0, wipe, gros DLC)
+      title: "Sortie de la 1.0",
+      description: "Ce que ça change pour nous."
+    }
   ],
 },
 ```
@@ -41,6 +47,28 @@ ressenti avant d'avoir joué, sans mettre de note.
 Champs optionnels : `cons`, `trailerUrl`, `criticScore`, `reviews`, `roadmap`
 peuvent rester vides (`""`, `null` ou `[]`) si vous n'avez pas encore l'info —
 le site affiche un message adapté ("pas encore renseigné").
+
+## Signaler une mise à jour importante
+
+Une MAJ qui peut nous obliger à repartir de zéro (une 1.0, un wipe, un gros
+DLC) doit se voir **avant** qu'on lance une partie. Pour ça, dans la `roadmap`
+du jeu :
+
+1. `major: true`
+2. `dateISO: "AAAA-MM-JJ"` si la date est annoncée
+
+Le site s'occupe du reste, sans rien à mettre à jour à la main :
+
+- un **bandeau rouge en haut de page** liste les MAJ majeures qui tombent dans
+  les 60 jours, avec un compte à rebours ("dans 15 jours") ;
+- la **carte du jeu** affiche un encart avec la date ;
+- dans la fiche, la **roadmap** met l'entrée en avant, classe les MAJ à venir
+  avant les anciennes, et grise celles déjà sorties.
+
+Le compte à rebours est recalculé à chaque ouverture de la page : une fois la
+date passée, l'alerte disparaît toute seule. Sans `dateISO`, la MAJ est
+affichée comme « date inconnue » et ne déclenche pas d'alerte — c'est le bon
+choix quand les développeurs ont annoncé du contenu sans calendrier.
 
 ## Ajouter une catégorie
 
