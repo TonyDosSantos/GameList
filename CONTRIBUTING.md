@@ -111,7 +111,7 @@ est, une note sur 10 (ou « sans note ») et un commentaire, puis
 Ce qui se passe ensuite est automatique :
 
 1. GitHub ouvre son éditeur avec un **nouveau fichier déjà rempli**, déposé
-   sur la branche technique `avis/en-attente` — il ne reste qu'à cliquer sur
+   sur la branche technique `avis-en-attente-branche` — il ne reste qu'à cliquer sur
    « Commit new file » ;
 2. le workflow
    [`avis-en-attente-vers-pr.yml`](.github/workflows/avis-en-attente-vers-pr.yml)
@@ -142,7 +142,7 @@ est vide ou dépasse 2000 caractères, ou si le même commentaire est déjà
 présent.
 
 Garde-fou côté déclenchement : seul quelqu'un ayant un accès en écriture au
-dépôt peut pousser un fichier sur `avis/en-attente` (GitHub l'impose déjà),
+dépôt peut pousser un fichier sur `avis-en-attente-branche` (GitHub l'impose déjà),
 et le workflow revérifie ce droit avant d'écrire quoi que ce soit.
 
 ### À la main
