@@ -75,7 +75,25 @@ jobs:
               "Closes #${NUMERO}")")
 
           echo "PR ouverte : $PR_URL"
-          gh issue comment "$NUMERO" --body "✅ Pull Request ouverte automatiquement : $PR_URL"
+
+          # Auto-merge : la PR se fusionne dès qu'elle est fusionnable, sans
+          # intervention. S'il y a des checks obligatoires, GitHub attend
+          # qu'ils passent. L'option doit être activée dans les réglages du
+          # dépôt (Settings → General → Allow auto-merge) ; si elle ne l'est
+          # pas, on le dit dans l'issue plutôt que d'échouer.
+          if gh pr merge "$PR_URL" --auto --squash --delete-branch; then
+            MESSAGE=$(printf '%s\n' \
+              "✅ Pull Request ouverte, auto-merge activé : $PR_URL" \
+              "" \
+              "Le commentaire sera en ligne dès la fusion, rien à faire.")
+          else
+            MESSAGE=$(printf '%s\n' \
+              "✅ Pull Request ouverte : $PR_URL" \
+              "" \
+              "⚠️ L'auto-merge n'a pas pu être activé. Vérifiez que **Settings → General → Allow auto-merge** est coché. En attendant, la PR est à fusionner à la main.")
+          fi
+
+          gh issue comment "$NUMERO" --body "$MESSAGE"
 
       - name: Signaler l'échec dans l'issue
         if: failure()

@@ -114,12 +114,14 @@ Ce qui se passe ensuite est automatique :
 2. le workflow [`avis-vers-pr.yml`](.github/workflows/avis-vers-pr.yml) lit
    l'issue, ajoute le commentaire à `js/reviews.js` et **ouvre une Pull
    Request** ;
-3. un commentaire dans l'issue donne le lien de la PR ;
-4. il ne reste qu'à fusionner. L'issue se ferme toute seule à la fusion.
+3. l'**auto-merge** est activé sur cette PR : elle se fusionne toute seule ;
+4. l'issue se ferme à la fusion, et le commentaire est en ligne.
 
-Compter une minute entre la création de l'issue et l'apparition de la PR. Si
-quelque chose échoue, le workflow commente l'issue avec le lien vers les logs
-plutôt que d'échouer en silence.
+Autrement dit, il n'y a rien à faire après avoir validé l'issue. Compter une
+minute environ. Si quelque chose échoue, le workflow commente l'issue avec le
+lien vers les logs plutôt que d'échouer en silence — et si l'auto-merge n'est
+pas activé dans les réglages du dépôt, il le dit et la PR reste simplement à
+fusionner à la main.
 
 Le brouillon est gardé dans le navigateur au fur et à mesure de la frappe :
 fermer la page par erreur ne fait pas perdre le commentaire. Le site retient

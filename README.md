@@ -70,10 +70,18 @@ js/app.js                  → affichage, filtres, recherche, tri, fiche détail
 
 ## Configuration requise côté GitHub
 
-Pour que la création automatique de PR fonctionne, une case doit être cochée
-une fois pour toutes (droits admin nécessaires) :
+Deux cases à cocher une fois pour toutes (droits admin nécessaires) :
 
-**Settings → Actions → General → Workflow permissions** → cocher
-**« Allow GitHub Actions to create and approve pull requests »**.
+1. **Settings → Actions → General → Workflow permissions** →
+   **« Allow GitHub Actions to create and approve pull requests »**.
+   Sans ça, l'Action lit bien l'issue mais échoue au moment d'ouvrir la PR.
 
-Sans ça, l'Action lira bien l'issue mais échouera au moment d'ouvrir la PR.
+2. **Settings → General → Pull Requests** → **« Allow auto-merge »**.
+   Avec cette option, la PR d'avis se fusionne toute seule : le commentaire
+   arrive en ligne sans aucune intervention. Sans elle, tout fonctionne
+   quand même, mais la PR reste à fusionner à la main — le workflow le
+   signale alors dans l'issue.
+
+À noter : un workflow déclenché par une issue s'exécute toujours depuis la
+**branche par défaut**. Toute modification du workflow doit donc y être
+fusionnée pour prendre effet.
