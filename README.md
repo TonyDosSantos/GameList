@@ -110,10 +110,29 @@ Deux cases à cocher une fois pour toutes (droits admin nécessaires) :
    d'ouvrir la PR.
 
 2. **Settings → General → Pull Requests** → **« Allow auto-merge »**.
-   Avec cette option, la PR d'avis se fusionne toute seule : le commentaire
-   arrive en ligne sans aucune intervention. Sans elle, tout fonctionne
-   quand même, mais la PR reste à fusionner à la main — le workflow ouvre
-   alors une issue pour le signaler.
+   Confort seulement : les workflows fusionnent directement, sans passer par
+   l'auto-merge de GitHub (voir plus bas pourquoi).
+
+## La branche technique doit exister
+
+Le bouton du site envoie vers
+`https://github.com/…/new/avis-en-attente-branche?filename=…`. **Cette URL ne
+fonctionne que si la branche existe déjà.** Sinon GitHub bascule sur « créer
+une nouvelle branche et ouvrir une PR », et le fichier JSON brut finit fusionné
+dans `main` sans jamais être traité — le commentaire n'arrive pas sur le site.
+
+Le nom de la branche ne doit pas contenir de `/` : dans `/new/{branche}/{chemin}`,
+GitHub ne saurait pas où s'arrête le nom de la branche. C'est exactement ce qui
+avait cassé la première version, nommée `avis/en-attente`.
+
+Pour la (re)créer :
+
+```bash
+git push origin main:avis-en-attente-branche
+```
+
+Le nettoyage de fin de traitement la réaligne ensuite sur `main` à chaque
+passage réussi, ce qui la maintient à jour toute seule.
 
 ## Toutes les PR se fusionnent toutes seules
 
@@ -131,8 +150,8 @@ accès au dépôt — celui-ci étant public, sans ce test la première PR venue
 fusionnerait dans `main`.
 
 À noter : un workflow déclenché par un `push` s'exécute avec la version du
-fichier de workflow présente **sur la branche poussée** (`avis/en-attente`),
+fichier de workflow présente **sur la branche poussée** (`avis-en-attente-branche`),
 pas celle de la branche par défaut. Le nettoyage de fin de traitement réaligne
 cette branche sur `main` à chaque passage réussi, ce qui la maintient à jour
 automatiquement — sauf si un traitement échoue en boucle, auquel cas il faut
-la resynchroniser à la main (`git push --force-with-lease origin main:avis/en-attente`).
+la resynchroniser à la main (`git push --force-with-lease origin main:avis-en-attente-branche`).

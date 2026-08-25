@@ -7,7 +7,7 @@
 // avant d'écrire quoi que ce soit.
 //
 // Deux checkouts sont en jeu :
-//  - le répertoire courant (STAGING_DIR) : la branche avis/en-attente, qui
+//  - le répertoire courant (STAGING_DIR) : la branche avis-en-attente-branche, qui
 //    contient les fichiers en attente sous avis-en-attente/ ;
 //  - BASE_DIR : la branche par défaut, dont on lit js/data.js et qu'on
 //    réécrit js/reviews.js dedans.

@@ -8,7 +8,7 @@ name: Avis en attente → Pull Request
 
 on:
   push:
-    branches: ["avis/en-attente"]
+    branches: ["avis-en-attente-branche"]
 
 permissions:
   contents: write
@@ -22,7 +22,7 @@ jobs:
       - name: Checkout de la branche d'attente
         uses: actions/checkout@v4
         with:
-          ref: avis/en-attente
+          ref: avis-en-attente-branche
           fetch-depth: 0
 
       - name: Checkout de la branche par défaut
@@ -81,18 +81,48 @@ jobs:
 
           echo "PR ouverte : $PR_URL"
 
-          # Auto-merge : la PR se fusionne dès qu'elle est fusionnable, sans
-          # intervention. S'il y a des checks obligatoires, GitHub attend
-          # qu'ils passent. L'option doit être activée dans les réglages du
-          # dépôt (Settings → General → Allow auto-merge) ; si elle ne l'est
-          # pas, on ouvre une issue pour le signaler plutôt que d'échouer.
-          if ! gh pr merge "$PR_URL" --auto --squash --delete-branch; then
+          # Fusion directe, et non `--auto` : sans check obligatoire sur ce
+          # dépôt, GitHub refuse l'auto-merge ("already in clean status") et
+          # la PR resterait ouverte. Une fusion différée tomberait de toute
+          # façon après l'estampillage de version ci-dessous, qui inscrirait
+          # alors le mauvais commit. Si des checks sont ajoutés un jour, c'est
+          # ici qu'il faudra revoir la logique.
+          #
+          # GitHub met parfois une seconde à calculer la fusionnabilité d'une
+          # PR fraîchement créée : on réessaie avant d'abandonner.
+          FUSIONNEE=false
+          for _ in 1 2 3 4 5; do
+            if gh pr merge "$PR_URL" --squash --delete-branch; then
+              FUSIONNEE=true
+              break
+            fi
+            echo "PR pas encore fusionnable, nouvelle tentative dans 5 s."
+            sleep 5
+          done
+
+          if [[ "$FUSIONNEE" != "true" ]]; then
             gh issue create \
-              --title "⚠️ Auto-merge indisponible pour un avis" \
+              --title "⚠️ Un avis n'a pas pu être fusionné" \
               --body "$(printf '%s\n\n%s\n' \
-                "La Pull Request $PR_URL a été ouverte mais l'auto-merge n'a pas pu être activé." \
-                "Vérifiez que **Settings → General → Allow auto-merge** est coché, puis fusionnez la PR à la main.")"
+                "La Pull Request $PR_URL a été ouverte mais n'a pas pu être fusionnée automatiquement." \
+                "Fusionnez-la à la main : le commentaire n'est pas encore en ligne.")"
+            exit 1
           fi
+
+      - name: Estampiller la version après fusion
+        if: steps.traiter.outputs.has_changes == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          path: apres-fusion
+
+      - name: Écrire js/version.js
+        if: steps.traiter.outputs.has_changes == 'true'
+        # Sans ça l'estampille du site resterait figée : GitHub ne déclenche
+        # aucun workflow sur un push fait avec GITHUB_TOKEN, donc la fusion
+        # ci-dessus ne réveille ni version.yml ni auto-merge.yml.
+        working-directory: apres-fusion
+        run: .github/scripts/estampiller-version.sh
 
       - name: Retirer les avis traités de la branche d'attente
         if: always() && steps.traiter.outcome == 'success'
@@ -109,11 +139,11 @@ jobs:
             # Rien ne reste à corriger à la main : la branche d'attente repart
             # à zéro, alignée sur la branche par défaut (ce qui la tient aussi
             # à jour de ce workflow et des données de référence).
-            git push --force-with-lease origin "${{ github.event.repository.default_branch }}:avis/en-attente"
+            git push --force-with-lease origin "${{ github.event.repository.default_branch }}:avis-en-attente-branche"
           elif [[ -n "$OK_FILES" ]]; then
             echo "$OK_FILES" | xargs -d '\n' git rm --
             git commit -m "Nettoyage : avis traités retirés de la file d'attente"
-            git push origin avis/en-attente
+            git push origin avis-en-attente-branche
           fi
 
       - name: Signaler les échecs de validation
@@ -127,7 +157,7 @@ jobs:
             --body "$(printf '%s\n\n%s\n\n%s\n' \
               "Un ou plusieurs fichiers déposés dans \`avis-en-attente/\` n'ont pas pu être ajoutés :" \
               "$FAILURES" \
-              "Corrigez ou supprimez ces fichiers sur la branche \`avis/en-attente\` pour relancer le traitement.")"
+              "Corrigez ou supprimez ces fichiers sur la branche \`avis-en-attente-branche\` pour relancer le traitement.")"
 
       - name: Signaler l'échec du traitement
         if: failure()

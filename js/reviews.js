@@ -2,7 +2,7 @@
 //
 // ⚠️ Ce fichier est réécrit automatiquement par le workflow
 // .github/workflows/avis-en-attente-vers-pr.yml : quand le formulaire du site
-// dépose un avis sur la branche avis/en-attente, un script y ajoute le
+// dépose un avis sur la branche avis-en-attente-branche, un script y ajoute le
 // commentaire et ouvre une Pull Request.
 //
 // Vous pouvez tout à fait l'éditer à la main, mais respectez le format :
