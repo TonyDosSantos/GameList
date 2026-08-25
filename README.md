@@ -71,8 +71,10 @@ js/app.js                  → affichage, filtres, recherche, tri, fiche détail
 
 ## Savoir quand le site a été mis à jour
 
-Le pied de page affiche la date du dernier déploiement et le commit
-correspondant, cliquable : *« Mis à jour le 25 août 2026 à 12:54 · b4e6f97 »*.
+Une pastille **en haut à droite** de la page affiche la date du dernier
+déploiement et le commit correspondant, cliquable :
+*« Mis à jour le 25 août 2026 à 12:54 · b4e6f97 »*. Sur petit écran elle
+repasse au-dessus du titre pour ne pas le chevaucher.
 
 C'est le workflow [`version.yml`](.github/workflows/version.yml) qui l'écrit :
 à chaque mise à jour de `main`, il estampille `js/version.js` avec le commit
@@ -97,6 +99,21 @@ Deux cases à cocher une fois pour toutes (droits admin nécessaires) :
    arrive en ligne sans aucune intervention. Sans elle, tout fonctionne
    quand même, mais la PR reste à fusionner à la main — le workflow ouvre
    alors une issue pour le signaler.
+
+## Toutes les PR se fusionnent toutes seules
+
+Le workflow [`auto-merge.yml`](.github/workflows/auto-merge.yml) fusionne
+**toute Pull Request** ouverte par quelqu'un ayant accès au dépôt, sans
+attendre de relecture. On est deux : une PR sert à voir le diff et à
+déclencher le redéploiement, pas à s'attendre l'un l'autre.
+
+**Pour garder une PR ouverte malgré tout, ouvrez-la en brouillon (« Draft »).**
+Le workflow les ignore ; passer la PR en « Ready for review » déclenche alors
+la fusion.
+
+Deux garde-fous : les brouillons sont exclus, et l'auteur doit réellement avoir
+accès au dépôt — celui-ci étant public, sans ce test la première PR venue se
+fusionnerait dans `main`.
 
 À noter : un workflow déclenché par un `push` s'exécute avec la version du
 fichier de workflow présente **sur la branche poussée** (`avis/en-attente`),

@@ -1,0 +1,51 @@
+name: Fusion automatique des PR
+
+# Toute Pull Request ouverte par quelqu'un ayant accès au dépôt est fusionnée
+# sans intervention. On est deux sur ce projet : une PR sert à voir le diff et
+# à déclencher le redéploiement, pas à s'attendre l'un l'autre.
+#
+# Conséquence à assumer : plus aucune relecture avant fusion. Pour garder une
+# PR ouverte malgré tout, ouvrez-la en brouillon (« Draft ») — ce workflow les
+# ignore, et « Ready for review » la fera fusionner.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  fusionner:
+    # Un brouillon reste ouvert. Et le dépôt étant public, on exige que
+    # l'auteur ait réellement accès au dépôt : sans ça, la première PR venue
+    # se fusionnerait toute seule dans main.
+    if: >-
+      github.event.pull_request.draft == false &&
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fusionner la Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          DEPOT: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # --auto demande à GitHub d'attendre les checks obligatoires. S'il
+          # n'y en a aucun, GitHub refuse l'auto-merge ("already in clean
+          # status") : la PR est alors fusionnable tout de suite, on fusionne
+          # directement. Les deux chemins mènent au même résultat.
+          if gh pr merge "$PR" --repo "$DEPOT" --auto --merge --delete-branch; then
+            echo "Auto-merge activé sur la PR #$PR."
+          else
+            echo "Auto-merge non applicable, fusion directe."
+            gh pr merge "$PR" --repo "$DEPOT" --merge --delete-branch
+          fi

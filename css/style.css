@@ -28,6 +28,7 @@ body {
 header.site-header {
   padding: 2.5rem 1.5rem 1.5rem;
   text-align: center;
+  position: relative;
 }
 
 header.site-header h1 {
@@ -693,15 +694,44 @@ footer.site-footer a {
   color: var(--accent-2);
 }
 
+/* Estampille de version, calée en haut à droite de la page. */
 .site-version {
-  margin-top: 0.4rem;
-  font-size: 0.75rem;
-  opacity: 0.75;
+  position: absolute;
+  top: 0.9rem;
+  right: 1.25rem;
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  max-width: calc(100% - 2.5rem);
 }
 
 .site-version code {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0.05rem 0.35rem;
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--accent-2);
+}
+
+.site-version a {
+  color: var(--accent-2);
+  text-decoration: none;
+}
+
+.site-version a:hover {
+  text-decoration: underline;
+}
+
+/* Sous 640 px, la pastille chevaucherait le titre : elle repasse dans le flux,
+   centrée au-dessus du titre. */
+@media (max-width: 640px) {
+  .site-version {
+    position: static;
+    display: inline-block;
+    max-width: 100%;
+    margin-bottom: 1rem;
+  }
 }
