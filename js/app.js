@@ -525,11 +525,11 @@ function reviewSnippet({ author, rating, comment }) {
   );
 }
 
-function issueUrl(game, { author, rating, comment }) {
-  const title = `[Avis] ${game.name} — ${author}`;
-
-  // Le bloc caché ci-dessous est ce que lit le workflow pour ouvrir la PR tout
-  // seul. La partie au-dessus est là pour l'humain qui lit l'issue.
+function reviewFileUrl(game, { author, rating, comment }) {
+  // Un avis = un fichier JSON déposé sur la branche technique STAGING_BRANCH.
+  // Le nom est unique (horodatage) pour ne jamais écraser un autre avis en
+  // attente. Le workflow avis-en-attente-vers-pr.yml lit ce fichier, l'ajoute
+  // à js/reviews.js et ouvre lui-même la Pull Request.
   const payload = {
     gameId: game.id,
     author,
@@ -538,21 +538,12 @@ function issueUrl(game, { author, rating, comment }) {
     date: new Date().toISOString().slice(0, 10),
   };
 
-  const body = [
-    `**Jeu :** ${game.name} (\`${game.id}\`)`,
-    `**Par :** ${author}`,
-    `**Note :** ${rating === "" ? "pas de note" : rating + "/10"}`,
-    "",
-    comment,
-    "",
-    "<!-- gamelist:avis",
-    JSON.stringify(payload),
-    "-->",
-  ].join("\n");
+  const path = `avis-en-attente/${game.id}--${author.toLowerCase()}--${Date.now()}.json`;
+  const content = JSON.stringify(payload, null, 2) + "\n";
 
-  return `https://github.com/${REPO}/issues/new?labels=avis&title=${encodeURIComponent(
-    title
-  )}&body=${encodeURIComponent(body)}`;
+  return `https://github.com/${REPO}/new/${STAGING_BRANCH}?filename=${encodeURIComponent(
+    path
+  )}&value=${encodeURIComponent(content)}`;
 }
 
 function renderReviewForm(game) {
@@ -599,7 +590,7 @@ function renderReviewForm(game) {
           )}</textarea>
       </label>
       <p class="muted form-help">
-        Le commentaire part sur GitHub, qui ouvre tout seul la Pull Request
+        Le commentaire part sur GitHub, qui ouvre tout seul une Pull Request
         pour l'ajouter au site.
       </p>
       <div class="form-actions">
@@ -647,12 +638,12 @@ function renderReviewForm(game) {
     const output = document.getElementById("review-output");
     output.innerHTML = `
       <div class="review-output">
-        <p><strong>Publier le commentaire.</strong> Le bouton ouvre une issue
-        déjà remplie : il ne reste qu'à valider. Une Pull Request est ensuite
-        créée automatiquement avec ton commentaire, il n'y a plus qu'à la
-        fusionner.</p>
+        <p><strong>Publier le commentaire.</strong> Le bouton ouvre GitHub
+        avec un fichier déjà rempli : il suffit de cliquer sur « Commit new
+        file ». Une Pull Request est ouverte et fusionnée automatiquement,
+        ton commentaire arrive sur le site sans autre étape.</p>
         <a class="btn-primary" target="_blank" rel="noopener"
-           href="${escapeHtml(issueUrl(game, values))}">
+           href="${escapeHtml(reviewFileUrl(game, values))}">
           🚀 Publier via GitHub
         </a>
         <details class="fallback">

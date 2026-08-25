@@ -110,18 +110,22 @@ est, une note sur 10 (ou « sans note ») et un commentaire, puis
 
 Ce qui se passe ensuite est automatique :
 
-1. GitHub ouvre une issue déjà remplie — il ne reste qu'à valider ;
-2. le workflow [`avis-vers-pr.yml`](.github/workflows/avis-vers-pr.yml) lit
-   l'issue, ajoute le commentaire à `js/reviews.js` et **ouvre une Pull
-   Request** ;
+1. GitHub ouvre son éditeur avec un **nouveau fichier déjà rempli**, déposé
+   sur la branche technique `avis/en-attente` — il ne reste qu'à cliquer sur
+   « Commit new file » ;
+2. le workflow
+   [`avis-en-attente-vers-pr.yml`](.github/workflows/avis-en-attente-vers-pr.yml)
+   lit ce fichier, ajoute le commentaire à `js/reviews.js` et **ouvre une
+   Pull Request** ;
 3. l'**auto-merge** est activé sur cette PR : elle se fusionne toute seule ;
-4. l'issue se ferme à la fusion, et le commentaire est en ligne.
+4. le commentaire est en ligne, et la file d'attente est nettoyée toute
+   seule.
 
-Autrement dit, il n'y a rien à faire après avoir validé l'issue. Compter une
-minute environ. Si quelque chose échoue, le workflow commente l'issue avec le
-lien vers les logs plutôt que d'échouer en silence — et si l'auto-merge n'est
-pas activé dans les réglages du dépôt, il le dit et la PR reste simplement à
-fusionner à la main.
+Autrement dit, il n'y a rien à faire après avoir validé le fichier — pas
+d'issue, pas de PR à fusionner à la main. Compter une minute environ. Si
+quelque chose échoue, le workflow ouvre une issue avec le détail plutôt que
+d'échouer en silence — et si l'auto-merge n'est pas activé dans les réglages
+du dépôt, il le dit et la PR reste simplement à fusionner à la main.
 
 Le brouillon est gardé dans le navigateur au fur et à mesure de la frappe :
 fermer la page par erreur ne fait pas perdre le commentaire. Le site retient
@@ -129,16 +133,17 @@ aussi qui vous êtes pour ne pas le redemander à chaque fois.
 
 ### Ce que le workflow refuse
 
-Le corps d'une issue est du texte libre : le script valide tout avant
-d'écrire. Il s'arrête, en expliquant pourquoi, si l'identifiant de jeu
-n'existe pas dans `js/data.js`, si l'auteur n'est pas dans `REVIEWERS`, si la
-note n'est pas un entier de 0 à 10, si le commentaire est vide ou dépasse
-2000 caractères, ou si le même commentaire est déjà présent (relance du
-workflow, issue rouverte).
+Le fichier déposé est éditable par n'importe qui ayant accès en écriture au
+dépôt : le script valide tout avant d'écrire dans `js/reviews.js`. Il
+s'arrête, en expliquant pourquoi (une issue est ouverte avec le détail), si
+l'identifiant de jeu n'existe pas dans `js/data.js`, si l'auteur n'est pas
+dans `REVIEWERS`, si la note n'est pas un entier de 0 à 10, si le commentaire
+est vide ou dépasse 2000 caractères, ou si le même commentaire est déjà
+présent.
 
-Deux garde-fous côté déclenchement : le label `avis` **et** un auteur d'issue
-qui a réellement accès au dépôt. Le dépôt étant public, sans ce second test
-n'importe qui pourrait faire ouvrir des PR en série.
+Garde-fou côté déclenchement : seul quelqu'un ayant un accès en écriture au
+dépôt peut pousser un fichier sur `avis/en-attente` (GitHub l'impose déjà),
+et le workflow revérifie ce droit avant d'écrire quoi que ce soit.
 
 ### À la main
 

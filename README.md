@@ -18,10 +18,10 @@ cartes montrent d'un coup d'œil qui a déjà donné son avis, et un filtre
 « Sans avis de … » liste ce qu'il vous reste à commenter.
 
 **Publier un commentaire ne demande pas de toucher au code.** Dans la fiche
-d'un jeu, « Ajouter un commentaire » puis « Publier via GitHub » ouvre une
-issue pré-remplie ; une GitHub Action la lit, ajoute le commentaire à
-`js/reviews.js` et **ouvre la Pull Request toute seule**. Il ne reste qu'à la
-fusionner, et l'issue se ferme à ce moment-là. Voir
+d'un jeu, « Ajouter un commentaire » puis « Publier via GitHub » ouvre GitHub
+avec un fichier déjà rempli ; il suffit de le valider. Une GitHub Action le
+lit, ajoute le commentaire à `js/reviews.js` et **ouvre une Pull Request
+qu'elle fusionne toute seule**. Rien d'autre à faire. Voir
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
 **Mises à jour importantes** : une MAJ majeure à venir (une 1.0, un wipe, un
@@ -64,8 +64,8 @@ js/data.js                 → catégories + jeux (écrit à la main)
 js/reviews.js              → avis et commentaires (réécrit par un workflow)
 js/version.js              → commit et date du déploiement (réécrit par un workflow)
 js/app.js                  → affichage, filtres, recherche, tri, fiche détaillée
-.github/ISSUE_TEMPLATE/    → templates d'issue (nouveau jeu, avis)
-.github/workflows/         → l'Action « avis → PR » et l'estampille de version
+.github/ISSUE_TEMPLATE/    → template d'issue (nouveau jeu)
+.github/workflows/         → l'Action « avis en attente → PR » et l'estampille de version
 .github/scripts/           → le script appelé par ces Actions
 ```
 
@@ -89,14 +89,18 @@ Deux cases à cocher une fois pour toutes (droits admin nécessaires) :
 
 1. **Settings → Actions → General → Workflow permissions** →
    **« Allow GitHub Actions to create and approve pull requests »**.
-   Sans ça, l'Action lit bien l'issue mais échoue au moment d'ouvrir la PR.
+   Sans ça, l'Action lit bien le fichier déposé mais échoue au moment
+   d'ouvrir la PR.
 
 2. **Settings → General → Pull Requests** → **« Allow auto-merge »**.
    Avec cette option, la PR d'avis se fusionne toute seule : le commentaire
    arrive en ligne sans aucune intervention. Sans elle, tout fonctionne
-   quand même, mais la PR reste à fusionner à la main — le workflow le
-   signale alors dans l'issue.
+   quand même, mais la PR reste à fusionner à la main — le workflow ouvre
+   alors une issue pour le signaler.
 
-À noter : un workflow déclenché par une issue s'exécute toujours depuis la
-**branche par défaut**. Toute modification du workflow doit donc y être
-fusionnée pour prendre effet.
+À noter : un workflow déclenché par un `push` s'exécute avec la version du
+fichier de workflow présente **sur la branche poussée** (`avis/en-attente`),
+pas celle de la branche par défaut. Le nettoyage de fin de traitement réaligne
+cette branche sur `main` à chaque passage réussi, ce qui la maintient à jour
+automatiquement — sauf si un traitement échoue en boucle, auquel cas il faut
+la resynchroniser à la main (`git push --force-with-lease origin main:avis/en-attente`).
