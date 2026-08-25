@@ -32,7 +32,14 @@ const REVIEWS = {
   "v-rising": [],
   "project-zomboid": [],
   "7-days-to-die": [],
-  "palworld": [],
+  "palworld": [
+    {
+      "author": "Tony",
+      "rating": 5,
+      "comment": "test com",
+      "date": "2026-08-25"
+    }
+  ],
   "abiotic-factor": [],
   "valheim": [],
   "slay-the-spire-2": [],
