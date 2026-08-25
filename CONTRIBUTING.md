@@ -105,31 +105,62 @@ commentaires qu'il veut sur un même jeu, avant et après y avoir joué. On ajou
 ### Le plus simple : le formulaire du site
 
 Ouvrir le jeu sur le site → **« ✍️ Ajouter un commentaire »**. On choisit qui on
-est, une note sur 10 (ou « sans note ») et un commentaire.
+est, une note sur 10 (ou « sans note ») et un commentaire, puis
+**« 🚀 Publier via GitHub »**.
 
-Le site étant statique, il n'y a pas de serveur pour enregistrer l'avis : le
-formulaire propose donc deux façons de le publier.
+Ce qui se passe ensuite est automatique :
 
-- **Option 1 — commiter.** Il génère la ligne de code prête à coller dans le
-  tableau `reviews` du jeu, dans `js/data.js`. Un bouton « Copier » met la
-  ligne dans le presse-papier.
-- **Option 2 — passer par GitHub.** Il ouvre une issue pré-remplie (titre,
-  jeu, note, commentaire). L'autre — ou Claude — l'intègre ensuite dans
-  `js/data.js`.
+1. GitHub ouvre une issue déjà remplie — il ne reste qu'à valider ;
+2. le workflow [`avis-vers-pr.yml`](.github/workflows/avis-vers-pr.yml) lit
+   l'issue, ajoute le commentaire à `js/reviews.js` et **ouvre une Pull
+   Request** ;
+3. l'**auto-merge** est activé sur cette PR : elle se fusionne toute seule ;
+4. l'issue se ferme à la fusion, et le commentaire est en ligne.
+
+Autrement dit, il n'y a rien à faire après avoir validé l'issue. Compter une
+minute environ. Si quelque chose échoue, le workflow commente l'issue avec le
+lien vers les logs plutôt que d'échouer en silence — et si l'auto-merge n'est
+pas activé dans les réglages du dépôt, il le dit et la PR reste simplement à
+fusionner à la main.
 
 Le brouillon est gardé dans le navigateur au fur et à mesure de la frappe :
 fermer la page par erreur ne fait pas perdre le commentaire. Le site retient
 aussi qui vous êtes pour ne pas le redemander à chaque fois.
 
+### Ce que le workflow refuse
+
+Le corps d'une issue est du texte libre : le script valide tout avant
+d'écrire. Il s'arrête, en expliquant pourquoi, si l'identifiant de jeu
+n'existe pas dans `js/data.js`, si l'auteur n'est pas dans `REVIEWERS`, si la
+note n'est pas un entier de 0 à 10, si le commentaire est vide ou dépasse
+2000 caractères, ou si le même commentaire est déjà présent (relance du
+workflow, issue rouverte).
+
+Deux garde-fous côté déclenchement : le label `avis` **et** un auteur d'issue
+qui a réellement accès au dépôt. Le dépôt étant public, sans ce second test
+n'importe qui pourrait faire ouvrir des PR en série.
+
 ### À la main
 
+Les avis vivent dans **`js/reviews.js`**, rangés par identifiant de jeu — pas
+dans `js/data.js`. Cette séparation est volontaire : `reviews.js` est réécrit
+par la machine, `data.js` reste écrit à la main.
+
 ```js
-reviews: [
-  { author: "Tony", rating: null, comment: "Pas encore joué, mais l'ambiance me tente." },
-  { author: "Maxime", rating: 7, comment: "Sympa mais un peu répétitif.", date: "2026-08-25" },
-  { author: "Tony", rating: 9, comment: "Revu à la hausse après quelques heures.", date: "2026-08-28" }
-]
+const REVIEWS = {
+  "core-keeper": [
+    { "author": "Tony", "rating": null, "comment": "Pas encore joué, mais l'ambiance me tente." },
+    { "author": "Maxime", "rating": 7, "comment": "Sympa mais un peu répétitif.", "date": "2026-08-25" },
+    { "author": "Tony", "rating": 9, "comment": "Revu à la hausse après quelques heures.", "date": "2026-08-28" }
+  ]
+};
 ```
+
+⚠️ **L'objet doit rester du JSON strict** : guillemets doubles sur les clés
+comme sur les valeurs, pas de virgule en trop, aucun commentaire à l'intérieur
+de l'objet. C'est ce qui permet au script de le relire et de le réécrire sans
+risque de casser le fichier. L'en-tête de commentaires au-dessus, lui, est
+conservé tel quel.
 
 `rating` accepte `null` pour commenter sans mettre de note, `date` est
 optionnelle.

@@ -15,9 +15,14 @@ sont dispos en haut de page. Un clic sur une carte ouvre la fiche complète.
 **Avis et notes** : chaque jeu a un fil de commentaires où chacun peut
 s'exprimer autant de fois qu'il veut, avec une note sur 10 s'il en a une. Les
 cartes montrent d'un coup d'œil qui a déjà donné son avis, et un filtre
-« Sans avis de … » liste ce qu'il vous reste à commenter. Le bouton
-« Ajouter un commentaire » dans la fiche génère le commentaire à commiter ou
-une issue GitHub pré-remplie — voir [CONTRIBUTING.md](CONTRIBUTING.md).
+« Sans avis de … » liste ce qu'il vous reste à commenter.
+
+**Publier un commentaire ne demande pas de toucher au code.** Dans la fiche
+d'un jeu, « Ajouter un commentaire » puis « Publier via GitHub » ouvre une
+issue pré-remplie ; une GitHub Action la lit, ajoute le commentaire à
+`js/reviews.js` et **ouvre la Pull Request toute seule**. Il ne reste qu'à la
+fusionner, et l'issue se ferme à ce moment-là. Voir
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 **Mises à jour importantes** : une MAJ majeure à venir (une 1.0, un wipe, un
 gros DLC — bref, ce qui peut nous obliger à jeter une partie en cours) est
@@ -53,9 +58,30 @@ Voir [CONTRIBUTING.md](CONTRIBUTING.md).
 ## Structure du projet
 
 ```
-index.html          → page principale
-css/style.css        → styles
-js/data.js            → catégories + données des jeux (la "base de données")
-js/app.js             → affichage, filtres, recherche, tri, modale de détail
-.github/ISSUE_TEMPLATE → template pour proposer un jeu via une issue
+index.html               → page principale
+css/style.css             → styles
+js/data.js                 → catégories + jeux (écrit à la main)
+js/reviews.js              → avis et commentaires (réécrit par le workflow)
+js/app.js                  → affichage, filtres, recherche, tri, fiche détaillée
+.github/ISSUE_TEMPLATE/    → templates d'issue (nouveau jeu, avis)
+.github/workflows/         → l'Action qui transforme un avis en Pull Request
+.github/scripts/           → le script appelé par cette Action
 ```
+
+## Configuration requise côté GitHub
+
+Deux cases à cocher une fois pour toutes (droits admin nécessaires) :
+
+1. **Settings → Actions → General → Workflow permissions** →
+   **« Allow GitHub Actions to create and approve pull requests »**.
+   Sans ça, l'Action lit bien l'issue mais échoue au moment d'ouvrir la PR.
+
+2. **Settings → General → Pull Requests** → **« Allow auto-merge »**.
+   Avec cette option, la PR d'avis se fusionne toute seule : le commentaire
+   arrive en ligne sans aucune intervention. Sans elle, tout fonctionne
+   quand même, mais la PR reste à fusionner à la main — le workflow le
+   signale alors dans l'issue.
+
+À noter : un workflow déclenché par une issue s'exécute toujours depuis la
+**branche par défaut**. Toute modification du workflow doit donc y être
+fusionnée pour prendre effet.

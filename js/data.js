@@ -45,16 +45,12 @@ const CATEGORIES = [
 //  cons         : le bémol, ce qui pourrait coincer (optionnel)
 //  trailerUrl   : lien YouTube de la bande-annonce (optionnel)
 //  criticScore  : { source, score, url } note presse/agrégateur (optionnel)
-//  reviews      : le fil des commentaires, dans l'ordre chronologique.
-//                 Chacun peut en laisser autant qu'il veut ; il suffit
-//                 d'ajouter une ligne à la fin sans rien effacer.
-//                   author  : "Maxime" ou "Tony" (voir REVIEWERS ci-dessus)
-//                   rating  : note sur 10, ou null pour commenter sans noter
-//                   comment : le commentaire
-//                   date    : "AAAA-MM-JJ" (optionnel)
-//                 La note affichée pour une personne est celle de son dernier
-//                 commentaire noté : on peut donc revoir son jugement en
-//                 ajoutant un commentaire, sans réécrire les précédents.
+//
+// Les avis ne sont PAS ici : ils vivent dans js/reviews.js, rangés par
+// identifiant de jeu. Ce fichier-là est réécrit automatiquement par le
+// workflow qui transforme une issue « avis » en Pull Request, d'où la
+// séparation — les données écrites à la main d'un côté, celles écrites par
+// la machine de l'autre.
 //  roadmap      : suivi des versions du jeu (optionnel). Chaque entrée :
 //                   date        : texte affiché (ex: "9 septembre 2026")
 //                   dateISO     : "AAAA-MM-JJ" si la date est connue. C'est ce
@@ -90,14 +86,6 @@ const GAMES_DATA = [
       score: "88 % (117 000 avis) · 90 % sur le dernier mois",
       url: "",
     },
-    reviews: [
-      {
-        author: "Tony",
-        rating: null,
-        comment:
-          "Le 2 est sorti, c'est une vraie histoire avec une fin, environnement un peu stressant, je pense que ça peut être pas mal du tout.",
-      },
-    ],
     roadmap: [
       {
         date: "Février 2024",
@@ -128,14 +116,6 @@ const GAMES_DATA = [
       score: "94 % (23 433 avis) · 90 % sur le dernier mois",
       url: "",
     },
-    reviews: [
-      {
-        author: "Tony",
-        rating: null,
-        comment:
-          "Mix entre un mode histoire de Minecraft en 2D, un Zelda, un personnage qui devient plus puissant, un peu artistique. Why not.",
-      },
-    ],
     roadmap: [
       {
         date: "Date non annoncée",
@@ -161,7 +141,6 @@ const GAMES_DATA = [
       "En coop simple le jeu nous garde en laisse, impossible de s'éloigner l'un de l'autre. Il faut passer par un serveur privé.",
     trailerUrl: "",
     criticScore: null,
-    reviews: [],
     roadmap: [],
   },
   {
@@ -178,7 +157,6 @@ const GAMES_DATA = [
     cons: "Jeu d'action avant tout, peu de construction longue.",
     trailerUrl: "",
     criticScore: null,
-    reviews: [],
     roadmap: [],
   },
 
@@ -200,7 +178,6 @@ const GAMES_DATA = [
       "Build 42 toute fraîche, une partie des mods n'est pas republiée. Même liste et même ordre de chargement sur les deux machines, à figer AVANT de créer le monde.",
     trailerUrl: "",
     criticScore: null,
-    reviews: [],
     roadmap: [
       {
         date: "Récemment",
@@ -226,7 +203,6 @@ const GAMES_DATA = [
       "Maxime a 370 h dessus : c'est le plus gros écart de connaissance de la liste.",
     trailerUrl: "",
     criticScore: null,
-    reviews: [],
     roadmap: [],
   },
   {
@@ -244,7 +220,6 @@ const GAMES_DATA = [
       "Il te faut un Game Pass, c'est une question d'accès. Maxime a 182 h dessus.",
     trailerUrl: "",
     criticScore: null,
-    reviews: [],
     roadmap: [],
   },
   {
@@ -261,7 +236,6 @@ const GAMES_DATA = [
     cons: "Maxime l'a essayé 6 h et n'y est jamais revenu.",
     trailerUrl: "",
     criticScore: null,
-    reviews: [],
     roadmap: [],
   },
   {
@@ -279,7 +253,6 @@ const GAMES_DATA = [
       "La 1.0 sort le 9 septembre et les développeurs conseillent une carte neuve. Commencer maintenant, c'est accepter de jeter la partie.",
     trailerUrl: "",
     criticScore: null,
-    reviews: [],
     roadmap: [
       {
         date: "9 septembre 2026",
@@ -310,7 +283,6 @@ const GAMES_DATA = [
       "Les jeux de cartes à deck, ça te parle ou pas ? C'est la seule chose qui décide. Si non, on le raye.",
     trailerUrl: "",
     criticScore: null,
-    reviews: [],
     roadmap: [],
   },
   {
@@ -327,7 +299,6 @@ const GAMES_DATA = [
     cons: "",
     trailerUrl: "",
     criticScore: null,
-    reviews: [],
     roadmap: [],
   },
   {
@@ -344,7 +315,6 @@ const GAMES_DATA = [
     cons: "",
     trailerUrl: "",
     criticScore: null,
-    reviews: [],
     roadmap: [],
   },
   {
@@ -361,7 +331,6 @@ const GAMES_DATA = [
     cons: "",
     trailerUrl: "",
     criticScore: null,
-    reviews: [],
     roadmap: [],
   },
 ];

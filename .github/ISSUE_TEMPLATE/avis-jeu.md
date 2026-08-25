@@ -6,8 +6,13 @@ labels: avis
 ---
 
 <!--
-Le plus simple : ouvrir le site, cliquer sur le jeu, puis "Donner mon avis".
-Le formulaire remplit cette issue tout seul.
+⚠️ Passez plutôt par le site : ouvrez le jeu, "Ajouter un commentaire", puis
+"Publier via GitHub". Le formulaire remplit cette issue ET y glisse le bloc
+technique qui déclenche la création automatique de la Pull Request.
+
+Une issue remplie à la main comme ci-dessous sera bien lue par un humain, mais
+n'ouvrira aucune PR toute seule : il faudra ajouter le commentaire dans
+js/reviews.js manuellement.
 -->
 
 **Jeu :**

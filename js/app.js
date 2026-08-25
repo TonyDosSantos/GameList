@@ -57,8 +57,13 @@ function populateSelect(select, values, labelFn) {
 // est celle de son commentaire noté le plus récent — on peut donc revoir son
 // jugement sans effacer ce qu'on avait écrit avant.
 
+// Les avis viennent de js/reviews.js, indexés par identifiant de jeu.
+function gameReviews(game) {
+  return (typeof REVIEWS !== "undefined" && REVIEWS[game.id]) || [];
+}
+
 function reviewsBy(game, author) {
-  return (game.reviews || []).filter((r) => r.author === author);
+  return gameReviews(game).filter((r) => r.author === author);
 }
 
 function hasReviewed(game, author) {
@@ -337,7 +342,7 @@ function openModal(game) {
       }).join("")}
     </div>`;
 
-  const thread = game.reviews || [];
+  const thread = gameReviews(game);
   const threadHtml = thread.length
     ? thread
         .map(
@@ -504,23 +509,47 @@ function storageSet(key, value) {
   }
 }
 
+// js/reviews.js est du JSON strict : le fragment doit l'être aussi.
 function reviewSnippet({ author, rating, comment }) {
-  const date = new Date().toISOString().slice(0, 10);
-  const ratingValue = rating === "" ? "null" : rating;
-  return `{ author: ${JSON.stringify(author)}, rating: ${ratingValue}, comment: ${JSON.stringify(
-    comment
-  )}, date: ${JSON.stringify(date)} },`;
+  return (
+    JSON.stringify(
+      {
+        author,
+        rating: rating === "" ? null : Number(rating),
+        comment,
+        date: new Date().toISOString().slice(0, 10),
+      },
+      null,
+      2
+    ) + ","
+  );
 }
 
 function issueUrl(game, { author, rating, comment }) {
   const title = `[Avis] ${game.name} — ${author}`;
+
+  // Le bloc caché ci-dessous est ce que lit le workflow pour ouvrir la PR tout
+  // seul. La partie au-dessus est là pour l'humain qui lit l'issue.
+  const payload = {
+    gameId: game.id,
+    author,
+    rating: rating === "" ? null : Number(rating),
+    comment,
+    date: new Date().toISOString().slice(0, 10),
+  };
+
   const body = [
     `**Jeu :** ${game.name} (\`${game.id}\`)`,
     `**Par :** ${author}`,
     `**Note :** ${rating === "" ? "pas de note" : rating + "/10"}`,
     "",
     comment,
+    "",
+    "<!-- gamelist:avis",
+    JSON.stringify(payload),
+    "-->",
   ].join("\n");
+
   return `https://github.com/${REPO}/issues/new?labels=avis&title=${encodeURIComponent(
     title
   )}&body=${encodeURIComponent(body)}`;
@@ -570,9 +599,8 @@ function renderReviewForm(game) {
           )}</textarea>
       </label>
       <p class="muted form-help">
-        Le site est statique : ton commentaire n'est pas publié en ligne
-        automatiquement. Choisis une des deux options ci-dessous pour qu'il
-        arrive jusqu'à l'autre.
+        Le commentaire part sur GitHub, qui ouvre tout seul la Pull Request
+        pour l'ajouter au site.
       </p>
       <div class="form-actions">
         <button type="submit" class="btn-primary">Générer mon commentaire</button>
@@ -619,21 +647,25 @@ function renderReviewForm(game) {
     const output = document.getElementById("review-output");
     output.innerHTML = `
       <div class="review-output">
-        <p><strong>Option 1 — commiter directement.</strong> Ajoute cette ligne
-        à la fin du tableau <code>reviews</code> de <code>${escapeHtml(
-          game.id
-        )}</code>, dans <code>js/data.js</code> — sans rien supprimer, les
-        commentaires s'empilent :</p>
-        <pre id="review-snippet">${escapeHtml(snippet)}</pre>
-        <button type="button" class="btn-secondary" id="copy-snippet">
-          📋 Copier
-        </button>
-        <p><strong>Option 2 — passer par GitHub.</strong> Ouvre une issue
-        pré-remplie. L'autre la voit tout de suite et l'intègre ensuite :</p>
-        <a class="btn-secondary" target="_blank" rel="noopener"
+        <p><strong>Publier le commentaire.</strong> Le bouton ouvre une issue
+        déjà remplie : il ne reste qu'à valider. Une Pull Request est ensuite
+        créée automatiquement avec ton commentaire, il n'y a plus qu'à la
+        fusionner.</p>
+        <a class="btn-primary" target="_blank" rel="noopener"
            href="${escapeHtml(issueUrl(game, values))}">
-          🔗 Ouvrir l'issue pré-remplie
+          🚀 Publier via GitHub
         </a>
+        <details class="fallback">
+          <summary>Ou l'ajouter à la main</summary>
+          <p>Ajoute cette ligne dans <code>js/reviews.js</code>, à la fin du
+          tableau <code>"${escapeHtml(
+            game.id
+          )}"</code> — sans rien supprimer, les commentaires s'empilent :</p>
+          <pre id="review-snippet">${escapeHtml(snippet)}</pre>
+          <button type="button" class="btn-secondary" id="copy-snippet">
+            📋 Copier
+          </button>
+        </details>
       </div>
     `;
 
