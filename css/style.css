@@ -50,53 +50,6 @@ main {
   padding: 0 1.5rem 4rem;
 }
 
-/* Bandeau des mises à jour majeures imminentes */
-.update-alert {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 92, 124, 0.14),
-    rgba(255, 184, 76, 0.08)
-  );
-  border: 1px solid rgba(255, 92, 124, 0.45);
-  border-left: 4px solid var(--danger);
-  border-radius: var(--radius);
-  padding: 1rem 1.25rem;
-  margin-bottom: 1.5rem;
-}
-
-.update-alert h2 {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
-  color: var(--danger);
-}
-
-.update-alert ul {
-  margin: 0;
-  padding-left: 1.1rem;
-  font-size: 0.88rem;
-  line-height: 1.55;
-}
-
-.update-alert li + li {
-  margin-top: 0.5rem;
-}
-
-.alert-game {
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  font-weight: 700;
-  color: var(--text);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-}
-
-.alert-game:hover {
-  color: var(--accent-2);
-}
-
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -413,6 +366,41 @@ main {
   border: 0;
 }
 
+.review-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.summary-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 8px;
+  background: var(--bg-card);
+  border: 1px dashed var(--border);
+  color: var(--text-muted);
+}
+
+.summary-chip.has-review {
+  border-style: solid;
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+}
+
+.summary-chip strong {
+  color: var(--text);
+}
+
+.review-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .review-item {
   border-bottom: 1px solid var(--border);
   padding: 0.6rem 0;
@@ -486,6 +474,11 @@ main {
   border-color: var(--accent-2);
   color: var(--accent-2);
   font-weight: 600;
+}
+
+.reviewer-pill sup {
+  font-size: 0.6rem;
+  margin-left: 0.1rem;
 }
 
 /* Formulaire d'avis */

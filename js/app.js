@@ -7,7 +7,6 @@ const STATUS_LABELS = {
 };
 
 const els = {
-  alert: document.getElementById("update-alert"),
   sections: document.getElementById("game-sections"),
   empty: document.getElementById("empty-state"),
   count: document.getElementById("results-count"),
@@ -53,21 +52,35 @@ function populateSelect(select, values, labelFn) {
 
 // --- Avis ------------------------------------------------------------------
 
-function reviewBy(game, author) {
-  return (game.reviews || []).find((r) => r.author === author) || null;
+// Chacun peut laisser autant de commentaires qu'il veut sur un jeu : les avis
+// forment un fil, dans l'ordre du fichier. La note retenue pour une personne
+// est celle de son commentaire noté le plus récent — on peut donc revoir son
+// jugement sans effacer ce qu'on avait écrit avant.
+
+function reviewsBy(game, author) {
+  return (game.reviews || []).filter((r) => r.author === author);
 }
 
-// Les avis des personnes qui ne sont pas dans REVIEWERS (invité, ancien nom…),
-// pour ne jamais en perdre un à l'affichage.
-function otherReviews(game) {
-  return (game.reviews || []).filter((r) => !REVIEWERS.includes(r.author));
+function hasReviewed(game, author) {
+  return reviewsBy(game, author).length > 0;
 }
 
+function latestRating(game, author) {
+  const rated = reviewsBy(game, author).filter(
+    (r) => typeof r.rating === "number"
+  );
+  return rated.length ? rated[rated.length - 1].rating : null;
+}
+
+// Moyenne des notes courantes de chacun (et non de tous les commentaires,
+// pour qu'une personne bavarde ne pèse pas plus lourd dans la moyenne).
 function averageRating(game) {
-  const rated = (game.reviews || []).filter((r) => typeof r.rating === "number");
-  if (rated.length === 0) return null;
-  const sum = rated.reduce((acc, r) => acc + r.rating, 0);
-  return Math.round((sum / rated.length) * 10) / 10;
+  const ratings = REVIEWERS.map((author) => latestRating(game, author)).filter(
+    (r) => r !== null
+  );
+  if (ratings.length === 0) return null;
+  const sum = ratings.reduce((acc, r) => acc + r, 0);
+  return Math.round((sum / ratings.length) * 10) / 10;
 }
 
 // --- Mises à jour à venir -------------------------------------------------
@@ -131,7 +144,7 @@ function getFilteredSortedGames() {
     if (platform && !(game.platforms || []).includes(platform)) return false;
     if (status && game.status !== status) return false;
     if (proposedBy && game.proposedBy !== proposedBy) return false;
-    if (missingReview && reviewBy(game, missingReview)) return false;
+    if (missingReview && hasReviewed(game, missingReview)) return false;
     return true;
   });
 
@@ -172,13 +185,14 @@ function renderCard(game) {
 
   if (nextMajor) card.classList.add("has-major-update");
 
+  const isImminent = nextMajor && nextMajor.days <= IMMINENT_DAYS;
   const majorBanner = nextMajor
-    ? `<div class="card-update ${
-        nextMajor.days <= IMMINENT_DAYS ? "imminent" : ""
-      }">
-         <strong>${escapeHtml(nextMajor.entry.title)}</strong>
-         <span>${escapeHtml(nextMajor.entry.date)} · ${formatCountdown(
+    ? `<div class="card-update ${isImminent ? "imminent" : ""}">
+         <strong>${isImminent ? "⚠️ " : ""}MAJ majeure · ${formatCountdown(
         nextMajor.days
+      )}</strong>
+         <span>${escapeHtml(nextMajor.entry.title)} — ${escapeHtml(
+        nextMajor.entry.date
       )}</span>
        </div>`
     : "";
@@ -208,68 +222,25 @@ function renderCard(game) {
       <span>Proposé par ${escapeHtml(game.proposedBy || "?")}</span>
       <span class="reviewer-pills">
         ${REVIEWERS.map((author) => {
-          const review = reviewBy(game, author);
-          const value = !review
-            ? "–"
-            : typeof review.rating === "number"
-            ? review.rating
-            : "✓";
+          const count = reviewsBy(game, author).length;
+          const rating = latestRating(game, author);
+          const value = count === 0 ? "–" : rating !== null ? rating : "✓";
+          const title =
+            count === 0
+              ? `${author} n'a pas encore donné son avis`
+              : `${author} · ${count} commentaire${count > 1 ? "s" : ""}${
+                  rating !== null ? ` · ${rating}/10` : ""
+                }`;
           return `<span class="reviewer-pill ${
-            review ? "has-review" : ""
-          }" title="${escapeHtml(author)}${
-            review ? "" : " n'a pas encore donné son avis"
-          }">${escapeHtml(author[0])} ${value}</span>`;
+            count ? "has-review" : ""
+          }" title="${escapeHtml(title)}">${escapeHtml(
+            author[0]
+          )} ${value}${count > 1 ? `<sup>${count}</sup>` : ""}</span>`;
         }).join("")}
       </span>
     </div>
   `;
   return card;
-}
-
-// Bandeau en haut de page : les MAJ majeures imminentes, tous jeux confondus.
-// Indépendant des filtres — c'est une info qui ne doit pas pouvoir être ratée.
-function renderUpdateAlert() {
-  const upcoming = GAMES_DATA.map((game) => ({
-    game,
-    next: nextMajorUpdate(game),
-  }))
-    .filter((r) => r.next && r.next.days <= IMMINENT_DAYS)
-    .sort((a, b) => a.next.days - b.next.days);
-
-  if (upcoming.length === 0) {
-    els.alert.innerHTML = "";
-    els.alert.classList.add("hidden");
-    return;
-  }
-
-  els.alert.classList.remove("hidden");
-  els.alert.innerHTML = `
-    <h2>⚠️ ${upcoming.length} mise${upcoming.length > 1 ? "s" : ""} à jour
-      majeure${upcoming.length > 1 ? "s" : ""} à venir</h2>
-    <ul>
-      ${upcoming
-        .map(
-          ({ game, next }) => `
-        <li>
-          <button type="button" class="alert-game" data-game-id="${escapeHtml(
-            game.id
-          )}">${escapeHtml(game.name)}</button>
-          — ${escapeHtml(next.entry.title)},
-          <strong>${escapeHtml(next.entry.date)}</strong>
-          (${formatCountdown(next.days)}).
-          ${escapeHtml(next.entry.description || "")}
-        </li>`
-        )
-        .join("")}
-    </ul>
-  `;
-
-  els.alert.querySelectorAll(".alert-game").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const game = GAMES_DATA.find((g) => g.id === btn.dataset.gameId);
-      if (game) openModal(game);
-    });
-  });
 }
 
 function render() {
@@ -347,37 +318,53 @@ function openModal(game) {
       }</p>`
     : `<p class="muted">Pas de note presse renseignée.</p>`;
 
-  const renderReview = (author, review) => `
-    <div class="review-item ${review ? "" : "pending"}">
-      <div class="review-head">
-        <span class="review-author">${escapeHtml(author)}</span>
-        ${
-          review && typeof review.rating === "number"
-            ? `<span class="review-score">${review.rating}/10</span>`
-            : review
-            ? `<span class="review-score no-score">sans note</span>`
-            : ""
-        }
-      </div>
-      ${
-        review
-          ? `<p>${escapeHtml(review.comment || "")}</p>
-             ${
-               review.date
-                 ? `<p class="review-date">${escapeHtml(review.date)}</p>`
-                 : ""
-             }`
-          : `<p class="muted">Pas encore d'avis.</p>`
-      }
+  // Récapitulatif : la note courante de chacun, et qui n'a pas encore parlé.
+  const summaryHtml = `
+    <div class="review-summary">
+      ${REVIEWERS.map((author) => {
+        const count = reviewsBy(game, author).length;
+        const rating = latestRating(game, author);
+        return `<span class="summary-chip ${count ? "has-review" : ""}">
+          <strong>${escapeHtml(author)}</strong>
+          ${
+            rating !== null
+              ? `${rating}/10`
+              : count
+              ? "sans note"
+              : "pas encore d'avis"
+          }
+        </span>`;
+      }).join("")}
     </div>`;
 
-  const reviewsHtml =
-    REVIEWERS.map((author) => renderReview(author, reviewBy(game, author))).join(
-      ""
-    ) +
-    otherReviews(game)
-      .map((r) => renderReview(r.author, r))
-      .join("");
+  const thread = game.reviews || [];
+  const threadHtml = thread.length
+    ? thread
+        .map(
+          (r) => `
+      <div class="review-item">
+        <div class="review-head">
+          <span class="review-author">${escapeHtml(r.author)}</span>
+          <span class="review-meta">
+            ${
+              typeof r.rating === "number"
+                ? `<span class="review-score">${r.rating}/10</span>`
+                : `<span class="review-score no-score">sans note</span>`
+            }
+            ${
+              r.date
+                ? `<span class="review-date">${escapeHtml(r.date)}</span>`
+                : ""
+            }
+          </span>
+        </div>
+        <p>${escapeHtml(r.comment || "")}</p>
+      </div>`
+        )
+        .join("")
+    : `<p class="muted">Aucun commentaire pour l'instant.</p>`;
+
+  const reviewsHtml = summaryHtml + threadHtml;
 
   const roadmapHtml =
     game.roadmap && game.roadmap.length
@@ -468,7 +455,7 @@ function openModal(game) {
       <h4>Nos avis</h4>
       ${reviewsHtml}
       <button type="button" class="btn-primary" id="open-review-form">
-        ✍️ Donner mon avis
+        ✍️ Ajouter un commentaire
       </button>
       <div id="review-form-slot"></div>
     </div>
@@ -550,7 +537,7 @@ function renderReviewForm(game) {
     <form class="review-form" id="review-form">
       <div class="form-row">
         <label>
-          Qui donne son avis ?
+          Qui commente ?
           <select id="review-author">
             ${REVIEWERS.map(
               (a) =>
@@ -583,12 +570,12 @@ function renderReviewForm(game) {
           )}</textarea>
       </label>
       <p class="muted form-help">
-        Le site est statique : ton avis n'est pas enregistré en ligne
-        automatiquement. Choisis une des deux options ci-dessous pour le
-        publier.
+        Le site est statique : ton commentaire n'est pas publié en ligne
+        automatiquement. Choisis une des deux options ci-dessous pour qu'il
+        arrive jusqu'à l'autre.
       </p>
       <div class="form-actions">
-        <button type="submit" class="btn-primary">Générer mon avis</button>
+        <button type="submit" class="btn-primary">Générer mon commentaire</button>
       </div>
       <div id="review-output"></div>
     </form>
@@ -632,16 +619,17 @@ function renderReviewForm(game) {
     const output = document.getElementById("review-output");
     output.innerHTML = `
       <div class="review-output">
-        <p><strong>Option 1 — commiter directement.</strong> Colle cette ligne
-        dans le tableau <code>reviews</code> de <code>${escapeHtml(
+        <p><strong>Option 1 — commiter directement.</strong> Ajoute cette ligne
+        à la fin du tableau <code>reviews</code> de <code>${escapeHtml(
           game.id
-        )}</code>, dans <code>js/data.js</code> :</p>
+        )}</code>, dans <code>js/data.js</code> — sans rien supprimer, les
+        commentaires s'empilent :</p>
         <pre id="review-snippet">${escapeHtml(snippet)}</pre>
         <button type="button" class="btn-secondary" id="copy-snippet">
           📋 Copier
         </button>
         <p><strong>Option 2 — passer par GitHub.</strong> Ouvre une issue
-        pré-remplie, l'autre l'intègre ensuite :</p>
+        pré-remplie. L'autre la voit tout de suite et l'intègre ensuite :</p>
         <a class="btn-secondary" target="_blank" rel="noopener"
            href="${escapeHtml(issueUrl(game, values))}">
           🔗 Ouvrir l'issue pré-remplie
@@ -711,5 +699,4 @@ populateSelect(
   (author) => `Sans avis de ${author}`
 );
 
-renderUpdateAlert();
 render();

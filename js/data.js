@@ -45,11 +45,16 @@ const CATEGORIES = [
 //  cons         : le bémol, ce qui pourrait coincer (optionnel)
 //  trailerUrl   : lien YouTube de la bande-annonce (optionnel)
 //  criticScore  : { source, score, url } note presse/agrégateur (optionnel)
-//  reviews      : nos avis. Un par personne (voir REVIEWERS ci-dessus) :
-//                   author  : "Maxime" ou "Tony"
-//                   rating  : note sur 10, ou null pour un ressenti sans note
+//  reviews      : le fil des commentaires, dans l'ordre chronologique.
+//                 Chacun peut en laisser autant qu'il veut ; il suffit
+//                 d'ajouter une ligne à la fin sans rien effacer.
+//                   author  : "Maxime" ou "Tony" (voir REVIEWERS ci-dessus)
+//                   rating  : note sur 10, ou null pour commenter sans noter
 //                   comment : le commentaire
 //                   date    : "AAAA-MM-JJ" (optionnel)
+//                 La note affichée pour une personne est celle de son dernier
+//                 commentaire noté : on peut donc revoir son jugement en
+//                 ajoutant un commentaire, sans réécrire les précédents.
 //  roadmap      : suivi des versions du jeu (optionnel). Chaque entrée :
 //                   date        : texte affiché (ex: "9 septembre 2026")
 //                   dateISO     : "AAAA-MM-JJ" si la date est connue. C'est ce

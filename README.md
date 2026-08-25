@@ -12,17 +12,17 @@ presse, nos avis perso et la roadmap des mises à jour à venir.
 Recherche, filtres (catégorie, genre, plateforme, statut, qui a proposé) et tri
 sont dispos en haut de page. Un clic sur une carte ouvre la fiche complète.
 
-**Avis et notes** : chacun peut noter un jeu sur 10 et le commenter de son
-côté. Les cartes montrent d'un coup d'œil qui a déjà donné son avis, et un
-filtre « Sans avis de … » liste ce qu'il vous reste à commenter. Le bouton
-« Donner mon avis » dans la fiche d'un jeu génère l'avis à commiter ou une
-issue GitHub pré-remplie — voir [CONTRIBUTING.md](CONTRIBUTING.md).
+**Avis et notes** : chaque jeu a un fil de commentaires où chacun peut
+s'exprimer autant de fois qu'il veut, avec une note sur 10 s'il en a une. Les
+cartes montrent d'un coup d'œil qui a déjà donné son avis, et un filtre
+« Sans avis de … » liste ce qu'il vous reste à commenter. Le bouton
+« Ajouter un commentaire » dans la fiche génère le commentaire à commiter ou
+une issue GitHub pré-remplie — voir [CONTRIBUTING.md](CONTRIBUTING.md).
 
 **Mises à jour importantes** : une MAJ majeure à venir (une 1.0, un wipe, un
 gros DLC — bref, ce qui peut nous obliger à jeter une partie en cours) est
-signalée par un bandeau en haut de page avec un compte à rebours, et sur la
-carte du jeu concerné. Voir [CONTRIBUTING.md](CONTRIBUTING.md) pour en
-déclarer une.
+signalée directement sur la carte du jeu concerné, avec un compte à rebours.
+Voir [CONTRIBUTING.md](CONTRIBUTING.md) pour en déclarer une.
 
 ## Voir le site
 

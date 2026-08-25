@@ -59,11 +59,13 @@ du jeu :
 
 Le site s'occupe du reste, sans rien à mettre à jour à la main :
 
-- un **bandeau rouge en haut de page** liste les MAJ majeures qui tombent dans
-  les 60 jours, avec un compte à rebours ("dans 15 jours") ;
-- la **carte du jeu** affiche un encart avec la date ;
+- la **carte du jeu** affiche un encart en rouge avec un compte à rebours
+  (« MAJ majeure · dans 15 jours ») quand l'échéance tombe dans les 60 jours ;
 - dans la fiche, la **roadmap** met l'entrée en avant, classe les MAJ à venir
   avant les anciennes, et grise celles déjà sorties.
+
+L'alerte reste dans le bloc du jeu concerné : pas de bandeau global en haut de
+page.
 
 Le compte à rebours est recalculé à chaque ouverture de la page : une fois la
 date passée, l'alerte disparaît toute seule. Sans `dateISO`, la MAJ est
@@ -96,12 +98,14 @@ charge ensuite de l'ajouter dans `js/data.js`.
 
 ## Donner son avis sur un jeu
 
-Chacun peut noter et commenter de son côté : un avis par personne et par jeu.
+Les avis forment un **fil de discussion** : chacun peut laisser autant de
+commentaires qu'il veut sur un même jeu, avant et après y avoir joué. On ajoute
+à la suite, on n'écrase jamais ce que l'autre a écrit.
 
 ### Le plus simple : le formulaire du site
 
-Ouvrir le jeu sur le site → **« ✍️ Donner mon avis »**. On choisit qui on est,
-une note sur 10 (ou « sans note ») et un commentaire.
+Ouvrir le jeu sur le site → **« ✍️ Ajouter un commentaire »**. On choisit qui on
+est, une note sur 10 (ou « sans note ») et un commentaire.
 
 Le site étant statique, il n'y a pas de serveur pour enregistrer l'avis : le
 formulaire propose donc deux façons de le publier.
@@ -121,20 +125,26 @@ aussi qui vous êtes pour ne pas le redemander à chaque fois.
 
 ```js
 reviews: [
+  { author: "Tony", rating: null, comment: "Pas encore joué, mais l'ambiance me tente." },
   { author: "Maxime", rating: 7, comment: "Sympa mais un peu répétitif.", date: "2026-08-25" },
-  { author: "Tony", rating: null, comment: "Pas encore joué, mais l'ambiance me tente." }
+  { author: "Tony", rating: 9, comment: "Revu à la hausse après quelques heures.", date: "2026-08-28" }
 ]
 ```
 
-`rating` accepte `null` pour donner un ressenti sans mettre de note. `date` est
+`rating` accepte `null` pour commenter sans mettre de note, `date` est
 optionnelle.
+
+**Changer d'avis** : ajoutez un nouveau commentaire à la fin plutôt que de
+modifier l'ancien. La note retenue pour une personne est celle de son dernier
+commentaire noté — dans l'exemple ci-dessus, Tony compte pour 9/10 — et
+l'historique reste lisible.
 
 ### Voir qui n'a pas encore donné son avis
 
-Sur chaque carte, deux pastilles indiquent l'état des avis : `M 8` (Maxime a
-mis 8), `T ✓` (Tony a commenté sans noter), `M –` (pas encore d'avis). Le
-filtre **« Sans avis de … »** en haut de page ne garde que les jeux qu'il vous
-reste à commenter.
+Sur chaque carte, deux pastilles résument l'état des avis : `M 7` (dernière
+note de Maxime), `T 9²` (Tony a mis 9, sur 2 commentaires), `M –` (pas encore
+d'avis). Le filtre **« Sans avis de … »** en haut de page ne garde que les jeux
+qu'il vous reste à commenter.
 
 ### Changer les personnes qui notent
 
