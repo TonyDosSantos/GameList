@@ -1,8 +1,9 @@
 // Avis et commentaires, rangés par identifiant de jeu.
 //
 // ⚠️ Ce fichier est réécrit automatiquement par le workflow
-// .github/workflows/avis-vers-pr.yml : quand une issue « avis » est ouverte
-// depuis le site, un script y ajoute le commentaire et ouvre une Pull Request.
+// .github/workflows/avis-en-attente-vers-pr.yml : quand le formulaire du site
+// dépose un avis sur la branche avis/en-attente, un script y ajoute le
+// commentaire et ouvre une Pull Request.
 //
 // Vous pouvez tout à fait l'éditer à la main, mais respectez le format :
 // l'objet ci-dessous doit rester du JSON strict (guillemets doubles partout,

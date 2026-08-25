@@ -1,8 +1,14 @@
 // Les deux personnes qui notent. Chaque jeu peut recevoir un avis de chacun.
 const REVIEWERS = ["Maxime", "Tony"];
 
-// Dépôt GitHub, utilisé pour pré-remplir les issues depuis le formulaire d'avis.
+// Dépôt GitHub, utilisé pour pré-remplir la création de fichier depuis le
+// formulaire d'avis.
 const REPO = "TonyDosSantos/GameList";
+
+// Branche technique où le formulaire dépose un fichier par avis en attente.
+// Elle est traitée par .github/workflows/avis-en-attente-vers-pr.yml puis
+// remise à zéro : ne jamais y committer autre chose à la main.
+const STAGING_BRANCH = "avis/en-attente";
 
 // Catégories, dans l'ordre d'affichage sur le site.
 // Pour en ajouter une : une nouvelle entrée ici, puis utilisez son `id`

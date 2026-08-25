@@ -1,0 +1,140 @@
+name: Avis en attente → Pull Request
+
+# Le formulaire du site dépose un fichier JSON (un avis) sur la branche
+# STAGING_BRANCH (js/data.js) via le lien "créer un nouveau fichier" de
+# GitHub — aucune issue n'est créée. Dès que ce fichier arrive ici, on
+# l'ajoute à js/reviews.js et on ouvre une Pull Request qui se fusionne
+# toute seule.
+
+on:
+  push:
+    branches: ["avis/en-attente"]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  creer-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout de la branche d'attente
+        uses: actions/checkout@v4
+        with:
+          ref: avis/en-attente
+          fetch-depth: 0
+
+      - name: Checkout de la branche par défaut
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          path: base
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Vérifier les droits de l'auteur du push
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          NIVEAU=$(gh api "repos/${{ github.repository }}/collaborators/${{ github.actor }}/permission" --jq .permission)
+          if [[ "$NIVEAU" != "admin" && "$NIVEAU" != "write" ]]; then
+            echo "::error::${{ github.actor }} n'a pas les droits d'écriture sur le dépôt (niveau : $NIVEAU)."
+            exit 1
+          fi
+
+      - name: Traiter les avis en attente
+        id: traiter
+        env:
+          BASE_DIR: base
+        run: node .github/scripts/traiter-avis-en-attente.mjs
+
+      - name: Ouvrir la Pull Request
+        if: steps.traiter.outputs.has_changes == 'true'
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE: ${{ github.event.repository.default_branch }}
+          SUMMARY: ${{ steps.traiter.outputs.summary }}
+        run: |
+          set -euo pipefail
+          cd base
+
+          BRANCHE="avis/lot-${{ github.run_id }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCHE"
+          git add js/reviews.js
+          git commit -m "$(printf 'Avis déposés depuis le site\n\n%s\n' "$SUMMARY")"
+          git push -u origin "$BRANCHE"
+
+          PR_URL=$(gh pr create \
+            --base "$BASE" \
+            --head "$BRANCHE" \
+            --title "Avis déposés depuis le site" \
+            --body "$(printf '%s\n\n%s\n' "Commentaire(s) déposé(s) depuis le site." "$SUMMARY")")
+
+          echo "PR ouverte : $PR_URL"
+
+          # Auto-merge : la PR se fusionne dès qu'elle est fusionnable, sans
+          # intervention. S'il y a des checks obligatoires, GitHub attend
+          # qu'ils passent. L'option doit être activée dans les réglages du
+          # dépôt (Settings → General → Allow auto-merge) ; si elle ne l'est
+          # pas, on ouvre une issue pour le signaler plutôt que d'échouer.
+          if ! gh pr merge "$PR_URL" --auto --squash --delete-branch; then
+            gh issue create \
+              --title "⚠️ Auto-merge indisponible pour un avis" \
+              --body "$(printf '%s\n\n%s\n' \
+                "La Pull Request $PR_URL a été ouverte mais l'auto-merge n'a pas pu être activé." \
+                "Vérifiez que **Settings → General → Allow auto-merge** est coché, puis fusionnez la PR à la main.")"
+          fi
+
+      - name: Retirer les avis traités de la branche d'attente
+        if: always() && steps.traiter.outcome == 'success'
+        env:
+          OK_FILES: ${{ steps.traiter.outputs.ok_files }}
+          ALL_OK: ${{ steps.traiter.outputs.all_ok }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if [[ "$ALL_OK" == "true" ]]; then
+            # Rien ne reste à corriger à la main : la branche d'attente repart
+            # à zéro, alignée sur la branche par défaut (ce qui la tient aussi
+            # à jour de ce workflow et des données de référence).
+            git push --force-with-lease origin "${{ github.event.repository.default_branch }}:avis/en-attente"
+          elif [[ -n "$OK_FILES" ]]; then
+            echo "$OK_FILES" | xargs -d '\n' git rm --
+            git commit -m "Nettoyage : avis traités retirés de la file d'attente"
+            git push origin avis/en-attente
+          fi
+
+      - name: Signaler les échecs de validation
+        if: steps.traiter.outputs.all_ok == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FAILURES: ${{ steps.traiter.outputs.failures }}
+        run: |
+          gh issue create \
+            --title "⚠️ Avis rejeté(s) dans la file d'attente" \
+            --body "$(printf '%s\n\n%s\n\n%s\n' \
+              "Un ou plusieurs fichiers déposés dans \`avis-en-attente/\` n'ont pas pu être ajoutés :" \
+              "$FAILURES" \
+              "Corrigez ou supprimez ces fichiers sur la branche \`avis/en-attente\` pour relancer le traitement.")"
+
+      - name: Signaler l'échec du traitement
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LOGS: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue create \
+            --title "⚠️ Échec du traitement d'un avis en attente" \
+            --body "Le workflow a échoué avant de terminer. Détail : $LOGS"
