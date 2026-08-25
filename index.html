@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GameList — nos soirées gaming</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>🎮 GameList</h1>
+      <p>La liste des jeux à faire lors de nos we / soirées gaming</p>
+    </header>
+
+    <main>
+      <section class="toolbar">
+        <input
+          type="search"
+          id="search-input"
+          placeholder="Rechercher un jeu..."
+        />
+        <select id="filter-genre">
+          <option value="">Tous les genres</option>
+        </select>
+        <select id="filter-platform">
+          <option value="">Toutes les plateformes</option>
+        </select>
+        <select id="filter-status">
+          <option value="">Tous les statuts</option>
+          <option value="a-essayer">À essayer</option>
+          <option value="en-cours">En cours</option>
+          <option value="termine">Terminé</option>
+          <option value="coup-de-coeur">Coup de cœur</option>
+        </select>
+        <select id="filter-proposedBy">
+          <option value="">Tout le monde</option>
+        </select>
+        <select id="sort-by">
+          <option value="name">Trier : Nom (A-Z)</option>
+          <option value="status">Trier : Statut</option>
+          <option value="rating">Trier : Note</option>
+        </select>
+      </section>
+
+      <p class="results-count" id="results-count"></p>
+
+      <section class="game-grid" id="game-grid"></section>
+      <p class="empty-state hidden" id="empty-state">
+        Aucun jeu ne correspond à ces filtres.
+      </p>
+    </main>
+
+    <footer class="site-footer">
+      <p>
+        Envie d'ajouter un jeu ? Voir
+        <a href="CONTRIBUTING.md">CONTRIBUTING.md</a>
+      </p>
+    </footer>
+
+    <div class="modal-overlay hidden" id="modal-overlay">
+      <div class="modal" id="modal">
+        <button class="modal-close" id="modal-close" aria-label="Fermer">
+          ×
+        </button>
+        <div id="modal-content"></div>
+      </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
