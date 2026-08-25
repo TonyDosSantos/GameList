@@ -1,8 +1,12 @@
 name: Estampiller la version du site
 
-# À chaque mise à jour de main, écrit dans js/version.js le commit déployé et
-# la date, que le site affiche en pied de page. GitHub Pages redéploie ensuite
-# tout seul.
+# Quand quelqu'un pousse ou fusionne sur main à la main, écrit dans
+# js/version.js le commit déployé et la date, que le site affiche en haut à
+# droite. GitHub Pages redéploie ensuite tout seul.
+#
+# Les fusions faites par le bot d'auto-merge ne passent PAS par ici : un push
+# effectué avec GITHUB_TOKEN ne déclenche aucun workflow. C'est auto-merge.yml
+# qui appelle le même script juste après avoir fusionné.
 
 on:
   push:
@@ -28,35 +32,4 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Écrire js/version.js
-        run: |
-          set -euo pipefail
-
-          COMMIT=$(git rev-parse --short HEAD)
-          DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-
-          cat > js/version.js <<FIN
-          // Estampille de version du site.
-          //
-          // ⚠️ Ce fichier est réécrit automatiquement par
-          // .github/workflows/version.yml à chaque mise à jour de \`main\`. Ne l'éditez
-          // pas à la main : votre modification serait écrasée au déploiement suivant.
-          //
-          // Les valeurs vides ci-dessous sont celles d'une copie locale : le site
-          // affiche alors « version locale » au lieu d'une date de déploiement.
-
-          const VERSION = {
-            "commit": "$COMMIT",
-            "builtAt": "$DATE"
-          };
-          FIN
-
-          if git diff --quiet js/version.js; then
-            echo "Version inchangée, rien à commiter."
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add js/version.js
-          git commit -m "Version du site : $COMMIT ($DATE)"
-          git push
+        run: .github/scripts/estampiller-version.sh

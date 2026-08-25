@@ -36,16 +36,21 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR: ${{ github.event.pull_request.number }}
           DEPOT: ${{ github.repository }}
-        run: |
-          set -euo pipefail
+        # Fusion directe, et non `--auto` : il n'y a aucun check obligatoire
+        # sur ce dépôt, donc GitHub refuse l'auto-merge ("already in clean
+        # status"). Surtout, une fusion différée par `--auto` tomberait après
+        # l'étape d'estampillage ci-dessous, qui inscrirait alors le mauvais
+        # commit. Si des checks sont ajoutés un jour, c'est ici qu'il faudra
+        # revoir la logique.
+        run: gh pr merge "$PR" --repo "$DEPOT" --merge --delete-branch
 
-          # --auto demande à GitHub d'attendre les checks obligatoires. S'il
-          # n'y en a aucun, GitHub refuse l'auto-merge ("already in clean
-          # status") : la PR est alors fusionnable tout de suite, on fusionne
-          # directement. Les deux chemins mènent au même résultat.
-          if gh pr merge "$PR" --repo "$DEPOT" --auto --merge --delete-branch; then
-            echo "Auto-merge activé sur la PR #$PR."
-          else
-            echo "Auto-merge non applicable, fusion directe."
-            gh pr merge "$PR" --repo "$DEPOT" --merge --delete-branch
-          fi
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Estampiller la version
+        # Indispensable : GitHub ne déclenche aucun workflow sur un push fait
+        # avec GITHUB_TOKEN. La fusion ci-dessus ne réveille donc pas
+        # version.yml, et sans cette étape l'estampille resterait figée sur un
+        # ancien commit alors que le site, lui, a bien été redéployé.
+        run: .github/scripts/estampiller-version.sh
