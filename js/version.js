@@ -9,6 +9,6 @@
 // affiche alors « version locale » au lieu d'une date de déploiement.
 
 const VERSION = {
-  "commit": "e4dc0e1",
-  "builtAt": "2026-08-25T14:03:19Z"
+  "commit": "2d0550c",
+  "builtAt": "2026-08-25T14:06:36Z"
 };
