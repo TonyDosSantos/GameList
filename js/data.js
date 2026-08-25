@@ -1,3 +1,9 @@
+// Les deux personnes qui notent. Chaque jeu peut recevoir un avis de chacun.
+const REVIEWERS = ["Maxime", "Tony"];
+
+// Dépôt GitHub, utilisé pour pré-remplir les issues depuis le formulaire d'avis.
+const REPO = "TonyDosSantos/GameList";
+
 // Catégories, dans l'ordre d'affichage sur le site.
 // Pour en ajouter une : une nouvelle entrée ici, puis utilisez son `id`
 // dans le champ `category` des jeux concernés.
@@ -39,7 +45,11 @@ const CATEGORIES = [
 //  cons         : le bémol, ce qui pourrait coincer (optionnel)
 //  trailerUrl   : lien YouTube de la bande-annonce (optionnel)
 //  criticScore  : { source, score, url } note presse/agrégateur (optionnel)
-//  reviews      : [{ author, rating (0-10 ou null), comment }] nos avis (optionnel)
+//  reviews      : nos avis. Un par personne (voir REVIEWERS ci-dessus) :
+//                   author  : "Maxime" ou "Tony"
+//                   rating  : note sur 10, ou null pour un ressenti sans note
+//                   comment : le commentaire
+//                   date    : "AAAA-MM-JJ" (optionnel)
 //  roadmap      : suivi des versions du jeu (optionnel). Chaque entrée :
 //                   date        : texte affiché (ex: "9 septembre 2026")
 //                   dateISO     : "AAAA-MM-JJ" si la date est connue. C'est ce

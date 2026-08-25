@@ -17,6 +17,7 @@ const els = {
   platform: document.getElementById("filter-platform"),
   status: document.getElementById("filter-status"),
   proposedBy: document.getElementById("filter-proposedBy"),
+  missingReview: document.getElementById("filter-missing-review"),
   sort: document.getElementById("sort-by"),
   modalOverlay: document.getElementById("modal-overlay"),
   modalContent: document.getElementById("modal-content"),
@@ -48,6 +49,18 @@ function populateSelect(select, values, labelFn) {
     option.textContent = labelFn ? labelFn(value) : value;
     select.appendChild(option);
   });
+}
+
+// --- Avis ------------------------------------------------------------------
+
+function reviewBy(game, author) {
+  return (game.reviews || []).find((r) => r.author === author) || null;
+}
+
+// Les avis des personnes qui ne sont pas dans REVIEWERS (invité, ancien nom…),
+// pour ne jamais en perdre un à l'affichage.
+function otherReviews(game) {
+  return (game.reviews || []).filter((r) => !REVIEWERS.includes(r.author));
 }
 
 function averageRating(game) {
@@ -108,6 +121,7 @@ function getFilteredSortedGames() {
   const platform = els.platform.value;
   const status = els.status.value;
   const proposedBy = els.proposedBy.value;
+  const missingReview = els.missingReview.value;
   const sortBy = els.sort.value;
 
   const result = GAMES_DATA.filter((game) => {
@@ -117,6 +131,7 @@ function getFilteredSortedGames() {
     if (platform && !(game.platforms || []).includes(platform)) return false;
     if (status && game.status !== status) return false;
     if (proposedBy && game.proposedBy !== proposedBy) return false;
+    if (missingReview && reviewBy(game, missingReview)) return false;
     return true;
   });
 
@@ -191,7 +206,21 @@ function renderCard(game) {
     </div>
     <div class="card-footer">
       <span>Proposé par ${escapeHtml(game.proposedBy || "?")}</span>
-      ${rating !== null ? `<span class="rating-pill">★ ${rating}/10</span>` : ""}
+      <span class="reviewer-pills">
+        ${REVIEWERS.map((author) => {
+          const review = reviewBy(game, author);
+          const value = !review
+            ? "–"
+            : typeof review.rating === "number"
+            ? review.rating
+            : "✓";
+          return `<span class="reviewer-pill ${
+            review ? "has-review" : ""
+          }" title="${escapeHtml(author)}${
+            review ? "" : " n'a pas encore donné son avis"
+          }">${escapeHtml(author[0])} ${value}</span>`;
+        }).join("")}
+      </span>
     </div>
   `;
   return card;
@@ -318,21 +347,37 @@ function openModal(game) {
       }</p>`
     : `<p class="muted">Pas de note presse renseignée.</p>`;
 
+  const renderReview = (author, review) => `
+    <div class="review-item ${review ? "" : "pending"}">
+      <div class="review-head">
+        <span class="review-author">${escapeHtml(author)}</span>
+        ${
+          review && typeof review.rating === "number"
+            ? `<span class="review-score">${review.rating}/10</span>`
+            : review
+            ? `<span class="review-score no-score">sans note</span>`
+            : ""
+        }
+      </div>
+      ${
+        review
+          ? `<p>${escapeHtml(review.comment || "")}</p>
+             ${
+               review.date
+                 ? `<p class="review-date">${escapeHtml(review.date)}</p>`
+                 : ""
+             }`
+          : `<p class="muted">Pas encore d'avis.</p>`
+      }
+    </div>`;
+
   const reviewsHtml =
-    game.reviews && game.reviews.length
-      ? game.reviews
-          .map(
-            (r) => `
-        <div class="review-item">
-          <div class="review-head">
-            <span>${escapeHtml(r.author)}</span>
-            ${typeof r.rating === "number" ? `<span>${r.rating}/10</span>` : ""}
-          </div>
-          <p>${escapeHtml(r.comment || "")}</p>
-        </div>`
-          )
-          .join("")
-      : `<p class="muted">Aucun avis pour l'instant.</p>`;
+    REVIEWERS.map((author) => renderReview(author, reviewBy(game, author))).join(
+      ""
+    ) +
+    otherReviews(game)
+      .map((r) => renderReview(r.author, r))
+      .join("");
 
   const roadmapHtml =
     game.roadmap && game.roadmap.length
@@ -422,6 +467,10 @@ function openModal(game) {
     <div class="modal-section">
       <h4>Nos avis</h4>
       ${reviewsHtml}
+      <button type="button" class="btn-primary" id="open-review-form">
+        ✍️ Donner mon avis
+      </button>
+      <div id="review-form-slot"></div>
     </div>
 
     <div class="modal-section">
@@ -431,6 +480,198 @@ function openModal(game) {
   `;
 
   els.modalOverlay.classList.remove("hidden");
+
+  document
+    .getElementById("open-review-form")
+    .addEventListener("click", (e) => {
+      e.currentTarget.classList.add("hidden");
+      renderReviewForm(game);
+    });
+}
+
+// --- Formulaire d'avis -----------------------------------------------------
+//
+// Le site est statique : il n'y a pas de serveur pour enregistrer un avis.
+// Le formulaire produit donc les deux choses qui permettent de le publier
+// quand même — le bloc de code prêt à coller dans data.js, et une issue
+// GitHub pré-remplie pour ceux qui préfèrent ne pas toucher au code.
+// Le brouillon est gardé dans le navigateur pour ne rien perdre en cours de
+// route.
+
+const DRAFT_KEY = "gamelist:draft";
+const WHOAMI_KEY = "gamelist:whoami";
+
+function storageGet(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function storageSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* navigation privée, cookies bloqués… : on continue sans brouillon */
+  }
+}
+
+function reviewSnippet({ author, rating, comment }) {
+  const date = new Date().toISOString().slice(0, 10);
+  const ratingValue = rating === "" ? "null" : rating;
+  return `{ author: ${JSON.stringify(author)}, rating: ${ratingValue}, comment: ${JSON.stringify(
+    comment
+  )}, date: ${JSON.stringify(date)} },`;
+}
+
+function issueUrl(game, { author, rating, comment }) {
+  const title = `[Avis] ${game.name} — ${author}`;
+  const body = [
+    `**Jeu :** ${game.name} (\`${game.id}\`)`,
+    `**Par :** ${author}`,
+    `**Note :** ${rating === "" ? "pas de note" : rating + "/10"}`,
+    "",
+    comment,
+  ].join("\n");
+  return `https://github.com/${REPO}/issues/new?labels=avis&title=${encodeURIComponent(
+    title
+  )}&body=${encodeURIComponent(body)}`;
+}
+
+function renderReviewForm(game) {
+  const slot = document.getElementById("review-form-slot");
+  const existingAuthor = storageGet(WHOAMI_KEY) || REVIEWERS[0];
+  const draft = JSON.parse(storageGet(DRAFT_KEY) || "{}");
+  const savedComment = draft.gameId === game.id ? draft.comment || "" : "";
+  const savedRating = draft.gameId === game.id ? draft.rating ?? "" : "";
+
+  slot.innerHTML = `
+    <form class="review-form" id="review-form">
+      <div class="form-row">
+        <label>
+          Qui donne son avis ?
+          <select id="review-author">
+            ${REVIEWERS.map(
+              (a) =>
+                `<option value="${escapeHtml(a)}" ${
+                  a === existingAuthor ? "selected" : ""
+                }>${escapeHtml(a)}</option>`
+            ).join("")}
+          </select>
+        </label>
+        <label>
+          Note
+          <select id="review-rating">
+            <option value="">Sans note</option>
+            ${Array.from({ length: 11 }, (_, i) => 10 - i)
+              .map(
+                (n) =>
+                  `<option value="${n}" ${
+                    String(n) === String(savedRating) ? "selected" : ""
+                  }>${n}/10</option>`
+              )
+              .join("")}
+          </select>
+        </label>
+      </div>
+      <label>
+        Commentaire
+        <textarea id="review-comment" rows="3"
+          placeholder="Ce que tu en as pensé, ce qui marche ou pas pour nous deux…">${escapeHtml(
+            savedComment
+          )}</textarea>
+      </label>
+      <p class="muted form-help">
+        Le site est statique : ton avis n'est pas enregistré en ligne
+        automatiquement. Choisis une des deux options ci-dessous pour le
+        publier.
+      </p>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Générer mon avis</button>
+      </div>
+      <div id="review-output"></div>
+    </form>
+  `;
+
+  const form = document.getElementById("review-form");
+  const authorEl = document.getElementById("review-author");
+  const ratingEl = document.getElementById("review-rating");
+  const commentEl = document.getElementById("review-comment");
+
+  const saveDraft = () =>
+    storageSet(
+      DRAFT_KEY,
+      JSON.stringify({
+        gameId: game.id,
+        rating: ratingEl.value,
+        comment: commentEl.value,
+      })
+    );
+
+  commentEl.addEventListener("input", saveDraft);
+  ratingEl.addEventListener("change", saveDraft);
+  authorEl.addEventListener("change", () =>
+    storageSet(WHOAMI_KEY, authorEl.value)
+  );
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const values = {
+      author: authorEl.value,
+      rating: ratingEl.value,
+      comment: commentEl.value.trim(),
+    };
+    if (!values.comment) {
+      commentEl.focus();
+      return;
+    }
+    storageSet(WHOAMI_KEY, values.author);
+
+    const snippet = reviewSnippet(values);
+    const output = document.getElementById("review-output");
+    output.innerHTML = `
+      <div class="review-output">
+        <p><strong>Option 1 — commiter directement.</strong> Colle cette ligne
+        dans le tableau <code>reviews</code> de <code>${escapeHtml(
+          game.id
+        )}</code>, dans <code>js/data.js</code> :</p>
+        <pre id="review-snippet">${escapeHtml(snippet)}</pre>
+        <button type="button" class="btn-secondary" id="copy-snippet">
+          📋 Copier
+        </button>
+        <p><strong>Option 2 — passer par GitHub.</strong> Ouvre une issue
+        pré-remplie, l'autre l'intègre ensuite :</p>
+        <a class="btn-secondary" target="_blank" rel="noopener"
+           href="${escapeHtml(issueUrl(game, values))}">
+          🔗 Ouvrir l'issue pré-remplie
+        </a>
+      </div>
+    `;
+
+    document.getElementById("copy-snippet").addEventListener("click", (ev) => {
+      // currentTarget est remis à null une fois l'événement traité : on garde
+      // la référence avant d'entrer dans les callbacks du presse-papier.
+      const button = ev.currentTarget;
+      navigator.clipboard
+        .writeText(snippet)
+        .then(() => {
+          button.textContent = "✅ Copié";
+        })
+        .catch(() => {
+          // Presse-papier refusé (http, permission) : on sélectionne le texte
+          // pour que la copie manuelle reste possible.
+          const range = document.createRange();
+          range.selectNodeContents(document.getElementById("review-snippet"));
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          button.textContent = "Sélectionné, Ctrl+C";
+        });
+    });
+  });
+
+  commentEl.focus();
 }
 
 function closeModal() {
@@ -452,6 +693,7 @@ document.addEventListener("keydown", (e) => {
   els.platform,
   els.status,
   els.proposedBy,
+  els.missingReview,
   els.sort,
 ].forEach((el) => el.addEventListener("input", render));
 
@@ -463,6 +705,11 @@ populateSelect(
 populateSelect(els.genre, uniqueValues(GAMES_DATA, (g) => g.genre));
 populateSelect(els.platform, uniqueValues(GAMES_DATA, (g) => g.platforms));
 populateSelect(els.proposedBy, uniqueValues(GAMES_DATA, (g) => g.proposedBy));
+populateSelect(
+  els.missingReview,
+  REVIEWERS,
+  (author) => `Sans avis de ${author}`
+);
 
 renderUpdateAlert();
 render();

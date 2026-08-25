@@ -94,16 +94,59 @@ Créer une nouvelle issue avec le template **"Nouveau jeu"**
 (`.github/ISSUE_TEMPLATE/nouveau-jeu.md`). Un de nous deux (ou Claude) se
 charge ensuite de l'ajouter dans `js/data.js`.
 
-## Ajouter un avis sur un jeu existant
+## Donner son avis sur un jeu
 
-Ouvrir `js/data.js`, trouver le jeu, ajouter une entrée dans son tableau
-`reviews` :
+Chacun peut noter et commenter de son côté : un avis par personne et par jeu.
+
+### Le plus simple : le formulaire du site
+
+Ouvrir le jeu sur le site → **« ✍️ Donner mon avis »**. On choisit qui on est,
+une note sur 10 (ou « sans note ») et un commentaire.
+
+Le site étant statique, il n'y a pas de serveur pour enregistrer l'avis : le
+formulaire propose donc deux façons de le publier.
+
+- **Option 1 — commiter.** Il génère la ligne de code prête à coller dans le
+  tableau `reviews` du jeu, dans `js/data.js`. Un bouton « Copier » met la
+  ligne dans le presse-papier.
+- **Option 2 — passer par GitHub.** Il ouvre une issue pré-remplie (titre,
+  jeu, note, commentaire). L'autre — ou Claude — l'intègre ensuite dans
+  `js/data.js`.
+
+Le brouillon est gardé dans le navigateur au fur et à mesure de la frappe :
+fermer la page par erreur ne fait pas perdre le commentaire. Le site retient
+aussi qui vous êtes pour ne pas le redemander à chaque fois.
+
+### À la main
 
 ```js
 reviews: [
-  { author: "Moi", rating: 7, comment: "Sympa mais un peu répétitif." }
+  { author: "Maxime", rating: 7, comment: "Sympa mais un peu répétitif.", date: "2026-08-25" },
+  { author: "Tony", rating: null, comment: "Pas encore joué, mais l'ambiance me tente." }
 ]
 ```
+
+`rating` accepte `null` pour donner un ressenti sans mettre de note. `date` est
+optionnelle.
+
+### Voir qui n'a pas encore donné son avis
+
+Sur chaque carte, deux pastilles indiquent l'état des avis : `M 8` (Maxime a
+mis 8), `T ✓` (Tony a commenté sans noter), `M –` (pas encore d'avis). Le
+filtre **« Sans avis de … »** en haut de page ne garde que les jeux qu'il vous
+reste à commenter.
+
+### Changer les personnes qui notent
+
+La liste est en haut de `js/data.js` :
+
+```js
+const REVIEWERS = ["Maxime", "Tony"];
+```
+
+Ajouter un nom suffit : pastilles, filtre et formulaire se mettent à jour tout
+seuls. Un avis signé d'un nom absent de cette liste reste affiché dans la
+fiche, il n'est jamais perdu.
 
 ## Mettre à jour le statut
 
