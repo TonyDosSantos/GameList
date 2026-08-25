@@ -61,12 +61,27 @@ Voir [CONTRIBUTING.md](CONTRIBUTING.md).
 index.html               → page principale
 css/style.css             → styles
 js/data.js                 → catégories + jeux (écrit à la main)
-js/reviews.js              → avis et commentaires (réécrit par le workflow)
+js/reviews.js              → avis et commentaires (réécrit par un workflow)
+js/version.js              → commit et date du déploiement (réécrit par un workflow)
 js/app.js                  → affichage, filtres, recherche, tri, fiche détaillée
 .github/ISSUE_TEMPLATE/    → templates d'issue (nouveau jeu, avis)
-.github/workflows/         → l'Action qui transforme un avis en Pull Request
-.github/scripts/           → le script appelé par cette Action
+.github/workflows/         → l'Action « avis → PR » et l'estampille de version
+.github/scripts/           → le script appelé par ces Actions
 ```
+
+## Savoir quand le site a été mis à jour
+
+Le pied de page affiche la date du dernier déploiement et le commit
+correspondant, cliquable : *« Mis à jour le 25 août 2026 à 12:54 · b4e6f97 »*.
+
+C'est le workflow [`version.yml`](.github/workflows/version.yml) qui l'écrit :
+à chaque mise à jour de `main`, il estampille `js/version.js` avec le commit
+et l'heure UTC, puis committe. GitHub Pages redéploie derrière. La date
+s'affiche ensuite dans le fuseau horaire de celui qui consulte.
+
+Sur une copie locale, `js/version.js` est vide et le site affiche « Version
+locale — pas encore déployée » : impossible de confondre ce qu'on a sous les
+yeux avec ce qui est en ligne.
 
 ## Configuration requise côté GitHub
 
