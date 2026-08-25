@@ -76,10 +76,25 @@ déploiement et le commit correspondant, cliquable :
 *« Mis à jour le 25 août 2026 à 12:54 · b4e6f97 »*. Sur petit écran elle
 repasse au-dessus du titre pour ne pas le chevaucher.
 
-C'est le workflow [`version.yml`](.github/workflows/version.yml) qui l'écrit :
-à chaque mise à jour de `main`, il estampille `js/version.js` avec le commit
-et l'heure UTC, puis committe. GitHub Pages redéploie derrière. La date
-s'affiche ensuite dans le fuseau horaire de celui qui consulte.
+C'est le script
+[`estampiller-version.sh`](.github/scripts/estampiller-version.sh) qui l'écrit :
+il inscrit dans `js/version.js` le commit et l'heure UTC, puis committe.
+GitHub Pages redéploie derrière, et la date s'affiche ensuite dans le fuseau
+horaire de celui qui consulte.
+
+**Deux workflows l'appellent, et ce n'est pas une redondance inutile :**
+
+- [`version.yml`](.github/workflows/version.yml) pour un push ou une fusion
+  faits à la main ;
+- [`auto-merge.yml`](.github/workflows/auto-merge.yml) juste après avoir
+  fusionné une PR.
+
+La raison tient à une règle de GitHub facile à oublier : **un push effectué
+avec `GITHUB_TOKEN` ne déclenche aucun workflow.** Une fusion faite par le bot
+d'auto-merge ne réveille donc jamais `version.yml`. Sans ce second appel, le
+site serait bien redéployé (Pages, lui, se relance) mais l'estampille resterait
+figée sur un ancien commit — un affichage faux, plus trompeur qu'une absence
+d'affichage.
 
 Sur une copie locale, `js/version.js` est vide et le site affiche « Version
 locale — pas encore déployée » : impossible de confondre ce qu'on a sous les
