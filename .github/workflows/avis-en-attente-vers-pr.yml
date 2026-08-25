@@ -124,27 +124,35 @@ jobs:
         working-directory: apres-fusion
         run: .github/scripts/estampiller-version.sh
 
-      - name: Retirer les avis traités de la branche d'attente
-        if: always() && steps.traiter.outcome == 'success'
-        env:
-          OK_FILES: ${{ steps.traiter.outputs.ok_files }}
-          ALL_OK: ${{ steps.traiter.outputs.all_ok }}
+      # Rien n'a été traité (push sans nouvel avis : création de la branche,
+      # réalignement…) : il n'y a rien à nettoyer. L'ancienne version poussait
+      # quand même, depuis un checkout où la branche par défaut n'existe pas
+      # localement — le refspec échouait et une issue était ouverte pour rien.
+      - name: Vider la file d'attente
+        if: steps.traiter.outputs.has_changes == 'true' && steps.traiter.outputs.all_ok == 'true'
+        # `apres-fusion` est un checkout de la branche par défaut, déjà
+        # fusionné et estampillé : la file repart de là, vidée de ses avis.
+        working-directory: apres-fusion
         run: |
           set -euo pipefail
+          git push --force origin "HEAD:refs/heads/avis-en-attente-branche"
+
+      # Des avis ont été rejetés : on ne retire que ceux qui sont passés, les
+      # autres restent en attente d'une correction à la main.
+      - name: Retirer seulement les avis traités
+        if: steps.traiter.outputs.has_changes == 'true' && steps.traiter.outputs.all_ok != 'true'
+        env:
+          OK_FILES: ${{ steps.traiter.outputs.ok_files }}
+        run: |
+          set -euo pipefail
+          [[ -n "$OK_FILES" ]] || exit 0
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          if [[ "$ALL_OK" == "true" ]]; then
-            # Rien ne reste à corriger à la main : la branche d'attente repart
-            # à zéro, alignée sur la branche par défaut (ce qui la tient aussi
-            # à jour de ce workflow et des données de référence).
-            git push --force-with-lease origin "${{ github.event.repository.default_branch }}:avis-en-attente-branche"
-          elif [[ -n "$OK_FILES" ]]; then
-            echo "$OK_FILES" | xargs -d '\n' git rm --
-            git commit -m "Nettoyage : avis traités retirés de la file d'attente"
-            git push origin avis-en-attente-branche
-          fi
+          echo "$OK_FILES" | xargs -d '\n' git rm --
+          git commit -m "Nettoyage : avis traités retirés de la file d'attente"
+          git push origin HEAD:avis-en-attente-branche
 
       - name: Signaler les échecs de validation
         if: steps.traiter.outputs.all_ok == 'false'
