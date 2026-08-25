@@ -1,13 +1,14 @@
 // Estampille de version du site.
 //
 // ⚠️ Ce fichier est réécrit automatiquement par
-// .github/workflows/version.yml à chaque mise à jour de `main`. Ne l'éditez
-// pas à la main : votre modification serait écrasée au déploiement suivant.
+// .github/scripts/estampiller-version.sh à chaque mise à jour de `main`. Ne
+// l'éditez pas à la main : votre modification serait écrasée au déploiement
+// suivant.
 //
 // Les valeurs vides ci-dessous sont celles d'une copie locale : le site
 // affiche alors « version locale » au lieu d'une date de déploiement.
 
 const VERSION = {
-  "commit": "d942c32",
-  "builtAt": "2026-08-25T13:30:30Z"
+  "commit": "3c9a008",
+  "builtAt": "2026-08-25T13:51:27Z"
 };
