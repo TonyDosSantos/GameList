@@ -731,4 +731,35 @@ populateSelect(
   (author) => `Sans avis de ${author}`
 );
 
+// Estampille de version en pied de page : quand le site a été redéployé pour
+// la dernière fois, et sur quel commit. Renseignée par le workflow
+// .github/workflows/version.yml ; vide sur une copie locale.
+function renderVersion() {
+  const cible = document.getElementById("site-version");
+  if (!cible) return;
+
+  const version = typeof VERSION !== "undefined" ? VERSION : null;
+  if (!version || !version.builtAt) {
+    cible.textContent = "Version locale — pas encore déployée";
+    return;
+  }
+
+  const date = new Date(version.builtAt);
+  const quand = Number.isNaN(date.getTime())
+    ? version.builtAt
+    : date.toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" });
+
+  const commit = version.commit
+    ? ` · <a href="https://github.com/${escapeHtml(
+        REPO
+      )}/commit/${encodeURIComponent(version.commit)}"
+         target="_blank" rel="noopener"><code>${escapeHtml(
+           version.commit
+         )}</code></a>`
+    : "";
+
+  cible.innerHTML = `Mis à jour le ${escapeHtml(quand)}${commit}`;
+}
+
+renderVersion();
 render();

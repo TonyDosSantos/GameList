@@ -1,0 +1,62 @@
+name: Estampiller la version du site
+
+# À chaque mise à jour de main, écrit dans js/version.js le commit déployé et
+# la date, que le site affiche en pied de page. GitHub Pages redéploie ensuite
+# tout seul.
+
+on:
+  push:
+    branches: [main]
+    # Sans cette exclusion, le commit d'estampillage relancerait le workflow,
+    # qui en produirait un autre, à l'infini.
+    paths-ignore:
+      - "js/version.js"
+
+permissions:
+  contents: write
+
+# Si plusieurs fusions s'enchaînent, seule la dernière estampille compte.
+concurrency:
+  group: version-du-site
+  cancel-in-progress: true
+
+jobs:
+  estampiller:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Écrire js/version.js
+        run: |
+          set -euo pipefail
+
+          COMMIT=$(git rev-parse --short HEAD)
+          DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+          cat > js/version.js <<FIN
+          // Estampille de version du site.
+          //
+          // ⚠️ Ce fichier est réécrit automatiquement par
+          // .github/workflows/version.yml à chaque mise à jour de \`main\`. Ne l'éditez
+          // pas à la main : votre modification serait écrasée au déploiement suivant.
+          //
+          // Les valeurs vides ci-dessous sont celles d'une copie locale : le site
+          // affiche alors « version locale » au lieu d'une date de déploiement.
+
+          const VERSION = {
+            "commit": "$COMMIT",
+            "builtAt": "$DATE"
+          };
+          FIN
+
+          if git diff --quiet js/version.js; then
+            echo "Version inchangée, rien à commiter."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/version.js
+          git commit -m "Version du site : $COMMIT ($DATE)"
+          git push

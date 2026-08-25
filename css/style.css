@@ -692,3 +692,16 @@ footer.site-footer {
 footer.site-footer a {
   color: var(--accent-2);
 }
+
+.site-version {
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+.site-version code {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.05rem 0.35rem;
+}
