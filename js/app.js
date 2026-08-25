@@ -3,13 +3,15 @@ const STATUS_LABELS = {
   "en-cours": "En cours",
   termine: "Terminé",
   "coup-de-coeur": "Coup de cœur",
+  ecarte: "Écarté",
 };
 
 const els = {
-  grid: document.getElementById("game-grid"),
+  sections: document.getElementById("game-sections"),
   empty: document.getElementById("empty-state"),
   count: document.getElementById("results-count"),
   search: document.getElementById("search-input"),
+  category: document.getElementById("filter-category"),
   genre: document.getElementById("filter-genre"),
   platform: document.getElementById("filter-platform"),
   status: document.getElementById("filter-status"),
@@ -19,6 +21,11 @@ const els = {
   modalContent: document.getElementById("modal-content"),
   modalClose: document.getElementById("modal-close"),
 };
+
+function categoryLabel(id) {
+  const category = CATEGORIES.find((c) => c.id === id);
+  return category ? category.label : id;
+}
 
 function uniqueValues(items, getter) {
   const set = new Set();
@@ -33,19 +40,20 @@ function uniqueValues(items, getter) {
   return [...set].sort((a, b) => a.localeCompare(b));
 }
 
-function populateSelect(select, values) {
+function populateSelect(select, values, labelFn) {
   values.forEach((value) => {
     const option = document.createElement("option");
     option.value = value;
-    option.textContent = value;
+    option.textContent = labelFn ? labelFn(value) : value;
     select.appendChild(option);
   });
 }
 
 function averageRating(game) {
-  if (!game.reviews || game.reviews.length === 0) return null;
-  const sum = game.reviews.reduce((acc, r) => acc + (r.rating || 0), 0);
-  return Math.round((sum / game.reviews.length) * 10) / 10;
+  const rated = (game.reviews || []).filter((r) => typeof r.rating === "number");
+  if (rated.length === 0) return null;
+  const sum = rated.reduce((acc, r) => acc + r.rating, 0);
+  return Math.round((sum / rated.length) * 10) / 10;
 }
 
 function extractYoutubeId(url) {
@@ -58,14 +66,16 @@ function extractYoutubeId(url) {
 
 function getFilteredSortedGames() {
   const search = els.search.value.trim().toLowerCase();
+  const category = els.category.value;
   const genre = els.genre.value;
   const platform = els.platform.value;
   const status = els.status.value;
   const proposedBy = els.proposedBy.value;
   const sortBy = els.sort.value;
 
-  let result = GAMES_DATA.filter((game) => {
+  const result = GAMES_DATA.filter((game) => {
     if (search && !game.name.toLowerCase().includes(search)) return false;
+    if (category && game.category !== category) return false;
     if (genre && !(game.genre || []).includes(genre)) return false;
     if (platform && !(game.platforms || []).includes(platform)) return false;
     if (status && game.status !== status) return false;
@@ -87,13 +97,22 @@ function getFilteredSortedGames() {
   return result;
 }
 
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = String(str);
+  return div.innerHTML;
+}
+
 function renderCard(game) {
   const card = document.createElement("article");
   card.className = "game-card";
   card.tabIndex = 0;
   card.addEventListener("click", () => openModal(game));
   card.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") openModal(game);
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openModal(game);
+    }
   });
 
   const rating = averageRating(game);
@@ -108,9 +127,15 @@ function renderCard(game) {
         .map((g) => `<span class="badge">${escapeHtml(g)}</span>`)
         .join("")}
     </div>
+    <p class="card-desc">${escapeHtml(game.description || "")}</p>
     <div class="card-meta">
       <span>👥 ${escapeHtml(game.players || "?")}</span>
       <span>🖥️ ${(game.platforms || []).map(escapeHtml).join(", ")}</span>
+      ${
+        game.cons
+          ? `<span class="card-cons">⚠️ ${escapeHtml(game.cons)}</span>`
+          : ""
+      }
     </div>
     <div class="card-footer">
       <span>Proposé par ${escapeHtml(game.proposedBy || "?")}</span>
@@ -120,16 +145,54 @@ function renderCard(game) {
   return card;
 }
 
-function escapeHtml(str) {
-  const div = document.createElement("div");
-  div.textContent = String(str);
-  return div.innerHTML;
-}
-
 function render() {
   const games = getFilteredSortedGames();
-  els.grid.innerHTML = "";
-  games.forEach((game) => els.grid.appendChild(renderCard(game)));
+  els.sections.innerHTML = "";
+
+  CATEGORIES.forEach((category) => {
+    const inCategory = games.filter((g) => g.category === category.id);
+    if (inCategory.length === 0) return;
+
+    const section = document.createElement("section");
+    section.className = "category-section";
+
+    const header = document.createElement("div");
+    header.className = "category-header";
+    header.innerHTML = `
+      <h2>${escapeHtml(category.label)}
+        <span class="category-count">${inCategory.length}</span>
+      </h2>
+      ${
+        category.description
+          ? `<p class="muted">${escapeHtml(category.description)}</p>`
+          : ""
+      }
+    `;
+    section.appendChild(header);
+
+    const grid = document.createElement("div");
+    grid.className = "game-grid";
+    inCategory.forEach((game) => grid.appendChild(renderCard(game)));
+    section.appendChild(grid);
+
+    els.sections.appendChild(section);
+  });
+
+  // Jeux dont la catégorie n'existe pas (ou pas renseignée).
+  const uncategorized = games.filter(
+    (g) => !CATEGORIES.some((c) => c.id === g.category)
+  );
+  if (uncategorized.length > 0) {
+    const section = document.createElement("section");
+    section.className = "category-section";
+    section.innerHTML = `<div class="category-header"><h2>Sans catégorie
+      <span class="category-count">${uncategorized.length}</span></h2></div>`;
+    const grid = document.createElement("div");
+    grid.className = "game-grid";
+    uncategorized.forEach((game) => grid.appendChild(renderCard(game)));
+    section.appendChild(grid);
+    els.sections.appendChild(section);
+  }
 
   els.empty.classList.toggle("hidden", games.length > 0);
   els.count.textContent = `${games.length} jeu${games.length > 1 ? "x" : ""}`;
@@ -146,11 +209,13 @@ function openModal(game) {
     : `<p class="muted">Pas de bande-annonce renseignée pour l'instant.</p>`;
 
   const criticHtml = game.criticScore
-    ? `<p><strong>${escapeHtml(game.criticScore.source)}</strong> : ${
+    ? `<p><strong>${escapeHtml(game.criticScore.source)}</strong> : ${escapeHtml(
         game.criticScore.score
-      }${
+      )}${
         game.criticScore.url
-          ? ` — <a href="${game.criticScore.url}" target="_blank" rel="noopener">voir la source</a>`
+          ? ` — <a href="${escapeHtml(
+              game.criticScore.url
+            )}" target="_blank" rel="noopener">voir la source</a>`
           : ""
       }</p>`
     : `<p class="muted">Pas de note presse renseignée.</p>`;
@@ -163,7 +228,7 @@ function openModal(game) {
         <div class="review-item">
           <div class="review-head">
             <span>${escapeHtml(r.author)}</span>
-            <span>${r.rating}/10</span>
+            ${typeof r.rating === "number" ? `<span>${r.rating}/10</span>` : ""}
           </div>
           <p>${escapeHtml(r.comment || "")}</p>
         </div>`
@@ -189,6 +254,7 @@ function openModal(game) {
 
   els.modalContent.innerHTML = `
     <h2>${escapeHtml(game.name)}</h2>
+    <p class="modal-category">${escapeHtml(categoryLabel(game.category))}</p>
     <div class="badge-row">
       <span class="badge status-${game.status}">${
     STATUS_LABELS[game.status] || game.status
@@ -199,11 +265,20 @@ function openModal(game) {
       ${rating !== null ? `<span class="badge">★ ${rating}/10</span>` : ""}
     </div>
     <p>${escapeHtml(game.description || "")}</p>
-    <p class="muted">👥 ${escapeHtml(
-      game.players || "?"
-    )} · 🖥️ ${(game.platforms || []).map(escapeHtml).join(", ")} · Proposé par ${escapeHtml(
-    game.proposedBy || "?"
-  )}</p>
+    <p class="muted">👥 ${escapeHtml(game.players || "?")} · 🖥️ ${(
+    game.platforms || []
+  )
+    .map(escapeHtml)
+    .join(", ")} · Proposé par ${escapeHtml(game.proposedBy || "?")}</p>
+
+    ${
+      game.cons
+        ? `<div class="modal-section cons-block">
+             <h4>Le bémol</h4>
+             <p>${escapeHtml(game.cons)}</p>
+           </div>`
+        : ""
+    }
 
     <div class="modal-section">
       <h4>Bande-annonce</h4>
@@ -241,10 +316,21 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeModal();
 });
 
-[els.search, els.genre, els.platform, els.status, els.proposedBy, els.sort].forEach(
-  (el) => el.addEventListener("input", render)
-);
+[
+  els.search,
+  els.category,
+  els.genre,
+  els.platform,
+  els.status,
+  els.proposedBy,
+  els.sort,
+].forEach((el) => el.addEventListener("input", render));
 
+populateSelect(
+  els.category,
+  CATEGORIES.map((c) => c.id),
+  categoryLabel
+);
 populateSelect(els.genre, uniqueValues(GAMES_DATA, (g) => g.genre));
 populateSelect(els.platform, uniqueValues(GAMES_DATA, (g) => g.platforms));
 populateSelect(els.proposedBy, uniqueValues(GAMES_DATA, (g) => g.proposedBy));

@@ -3,9 +3,14 @@
 Petit site statique pour maintenir, avec Tony, la liste des jeux auxquels on
 veut jouer (ou qu'on a déjà testés) lors de nos we / soirées gaming.
 
-Pour chaque jeu on garde : genre, nombre de joueurs, plateforme(s), statut,
-qui l'a proposé, une description, une bande-annonce, la note presse, nos avis
-perso et la roadmap des mises à jour à venir.
+Les jeux sont rangés par **catégorie** (« On découvre ensemble », « Maxime
+connaît déjà, Tony part de zéro », « Petits jeux »). Pour chaque jeu on garde :
+genre, nombre de joueurs, plateforme(s), statut, qui l'a proposé, une
+description, **le bémol** (ce qui pourrait coincer), une bande-annonce, la note
+presse, nos avis perso et la roadmap des mises à jour à venir.
+
+Recherche, filtres (catégorie, genre, plateforme, statut, qui a proposé) et tri
+sont dispos en haut de page. Un clic sur une carte ouvre la fiche complète.
 
 ## Voir le site
 
@@ -38,7 +43,7 @@ Voir [CONTRIBUTING.md](CONTRIBUTING.md).
 ```
 index.html          → page principale
 css/style.css        → styles
-js/data.js            → données des jeux (la "base de données")
+js/data.js            → catégories + données des jeux (la "base de données")
 js/app.js             → affichage, filtres, recherche, tri, modale de détail
 .github/ISSUE_TEMPLATE → template pour proposer un jeu via une issue
 ```

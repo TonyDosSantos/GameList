@@ -19,6 +19,9 @@
           id="search-input"
           placeholder="Rechercher un jeu..."
         />
+        <select id="filter-category">
+          <option value="">Toutes les catégories</option>
+        </select>
         <select id="filter-genre">
           <option value="">Tous les genres</option>
         </select>
@@ -31,6 +34,7 @@
           <option value="en-cours">En cours</option>
           <option value="termine">Terminé</option>
           <option value="coup-de-coeur">Coup de cœur</option>
+          <option value="ecarte">Écarté</option>
         </select>
         <select id="filter-proposedBy">
           <option value="">Tout le monde</option>
@@ -44,7 +48,7 @@
 
       <p class="results-count" id="results-count"></p>
 
-      <section class="game-grid" id="game-grid"></section>
+      <div id="game-sections"></div>
       <p class="empty-state hidden" id="empty-state">
         Aucun jeu ne correspond à ces filtres.
       </p>
