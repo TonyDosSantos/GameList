@@ -57,9 +57,13 @@ function populateSelect(select, values, labelFn) {
 // est celle de son commentaire noté le plus récent — on peut donc revoir son
 // jugement sans effacer ce qu'on avait écrit avant.
 
-// Les avis viennent de js/reviews.js, indexés par identifiant de jeu.
+// Les avis viennent de js/reviews.js, indexés par identifiant de jeu. La
+// variable est réassignable : rafraichirDonnees() y remet des données fraîches
+// une fois la page affichée (voir plus bas).
+let reviewsData = typeof REVIEWS !== "undefined" ? REVIEWS : {};
+
 function gameReviews(game) {
-  return (typeof REVIEWS !== "undefined" && REVIEWS[game.id]) || [];
+  return reviewsData[game.id] || [];
 }
 
 function reviewsBy(game, author) {
@@ -594,7 +598,7 @@ function renderReviewForm(game) {
         pour l'ajouter au site.
       </p>
       <div class="form-actions">
-        <button type="submit" class="btn-primary">Générer mon commentaire</button>
+        <button type="submit" class="btn-primary">🚀 Publier mon commentaire</button>
       </div>
       <div id="review-output"></div>
     </form>
@@ -634,18 +638,23 @@ function renderReviewForm(game) {
     }
     storageSet(WHOAMI_KEY, values.author);
 
+    // Un seul bouton : on part directement sur GitHub. L'étape intermédiaire
+    // « générer » puis « publier » ne servait à rien — le contenu était déjà
+    // entièrement déterminé par le formulaire.
+    window.open(reviewFileUrl(game, values), "_blank", "noopener");
+
     const snippet = reviewSnippet(values);
     const output = document.getElementById("review-output");
     output.innerHTML = `
       <div class="review-output">
-        <p><strong>Publier le commentaire.</strong> Le bouton ouvre GitHub
-        avec un fichier déjà rempli : il suffit de cliquer sur « Commit new
-        file ». Une Pull Request est ouverte et fusionnée automatiquement,
-        ton commentaire arrive sur le site sans autre étape.</p>
-        <a class="btn-primary" target="_blank" rel="noopener"
-           href="${escapeHtml(reviewFileUrl(game, values))}">
-          🚀 Publier via GitHub
-        </a>
+        <p><strong>GitHub vient de s'ouvrir dans un nouvel onglet</strong>, avec
+        ton commentaire déjà rempli : il ne reste qu'à cliquer sur
+        « Commit new file ». La Pull Request est ensuite ouverte et fusionnée
+        automatiquement.</p>
+        <p class="muted">Rien ne s'est ouvert ? Le navigateur a sans doute
+        bloqué la fenêtre :
+        <a href="${escapeHtml(reviewFileUrl(game, values))}"
+           target="_blank" rel="noopener">ouvrir GitHub</a>.</p>
         <details class="fallback">
           <summary>Ou l'ajouter à la main</summary>
           <p>Ajoute cette ligne dans <code>js/reviews.js</code>, à la fin du
@@ -725,11 +734,13 @@ populateSelect(
 // Estampille de version en pied de page : quand le site a été redéployé pour
 // la dernière fois, et sur quel commit. Renseignée par le workflow
 // .github/workflows/version.yml ; vide sur une copie locale.
+let versionData = typeof VERSION !== "undefined" ? VERSION : null;
+
 function renderVersion() {
   const cible = document.getElementById("site-version");
   if (!cible) return;
 
-  const version = typeof VERSION !== "undefined" ? VERSION : null;
+  const version = versionData;
   if (!version || !version.builtAt) {
     cible.textContent = "Version locale — pas encore déployée";
     return;
@@ -752,5 +763,48 @@ function renderVersion() {
   cible.innerHTML = `Mis à jour le ${escapeHtml(quand)}${commit}`;
 }
 
+// GitHub Pages met un cache de 10 minutes sur chaque fichier. Un commentaire
+// tout juste publié resterait donc invisible pendant ce temps, ce qui donne
+// l'impression que rien ne fonctionne alors que tout est déjà en ligne. On
+// redemande donc les données avec un paramètre unique, que le cache ne peut
+// pas servir, et on réaffiche si elles ont changé.
+async function rafraichirDonnees() {
+  const relire = async (fichier, variable) => {
+    const reponse = await fetch(`${fichier}?t=${Date.now()}`, {
+      cache: "no-store",
+    });
+    if (!reponse.ok) throw new Error(`${fichier} → HTTP ${reponse.status}`);
+
+    const texte = await reponse.text();
+    const bloc = texte.match(
+      new RegExp(`const ${variable} = ([\\s\\S]*);\\s*$`)
+    );
+    if (!bloc) throw new Error(`${fichier} → format inattendu`);
+
+    // Les deux fichiers sont écrits en JSON strict par les workflows, donc
+    // lisibles sans évaluer le moindre code.
+    return JSON.parse(bloc[1]);
+  };
+
+  try {
+    const [avis, version] = await Promise.all([
+      relire("js/reviews.js", "REVIEWS"),
+      relire("js/version.js", "VERSION"),
+    ]);
+    reviewsData = avis;
+    versionData = version;
+    renderVersion();
+    render();
+  } catch (erreur) {
+    // Page ouverte en file://, hors ligne, format changé… : les données
+    // chargées par les balises <script> restent valides, on s'en contente.
+    console.info(
+      "Données fraîches indisponibles, affichage du cache :",
+      erreur.message
+    );
+  }
+}
+
 renderVersion();
 render();
+rafraichirDonnees();
