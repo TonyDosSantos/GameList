@@ -330,17 +330,31 @@ function openModal(game) {
       )}" allowfullscreen></iframe></div>`
     : `<p class="muted">Pas de bande-annonce renseignée pour l'instant.</p>`;
 
-  const criticHtml = game.criticScore
-    ? `<p><strong>${escapeHtml(game.criticScore.source)}</strong> : ${escapeHtml(
-        game.criticScore.score
-      )}${
-        game.criticScore.url
-          ? ` — <a href="${escapeHtml(
-              game.criticScore.url
-            )}" target="_blank" rel="noopener">voir la source</a>`
-          : ""
-      }</p>`
-    : `<p class="muted">Pas de note presse renseignée.</p>`;
+  // Un jeu peut porter plusieurs notes — la presse et les joueurs ne disent
+  // pas toujours la même chose, et l'écart est souvent l'information utile.
+  // `criticScore` (une seule note) reste accepté pour les fiches anciennes.
+  const scores = Array.isArray(game.scores)
+    ? game.scores
+    : game.criticScore
+    ? [game.criticScore]
+    : [];
+
+  const criticHtml = scores.length
+    ? `<ul class="score-list">${scores
+        .map(
+          (s) => `<li>
+            <strong>${escapeHtml(s.source)}</strong> ${escapeHtml(s.score)}
+            ${
+              s.url
+                ? `<a href="${escapeHtml(
+                    s.url
+                  )}" target="_blank" rel="noopener">source</a>`
+                : ""
+            }
+          </li>`
+        )
+        .join("")}</ul>`
+    : `<p class="muted">Pas de note renseignée.</p>`;
 
   // Récapitulatif : la note courante de chacun, et qui n'a pas encore parlé.
   const summaryHtml = `
@@ -471,7 +485,7 @@ function openModal(game) {
     </div>
 
     <div class="modal-section">
-      <h4>Note presse</h4>
+      <h4>Avis presse et joueurs</h4>
       ${criticHtml}
     </div>
 
