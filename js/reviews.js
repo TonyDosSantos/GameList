@@ -19,6 +19,12 @@ const REVIEWS = {
       "author": "Tony",
       "rating": null,
       "comment": "Le 2 est sorti, c'est une vraie histoire avec une fin, environnement un peu stressant, je pense que ça peut être pas mal du tout."
+    },
+    {
+      "author": "Maxime",
+      "rating": 10,
+      "comment": "Test Comm",
+      "date": "2026-08-26"
     }
   ],
   "core-keeper": [
