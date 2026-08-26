@@ -38,6 +38,12 @@ const REVIEWS = {
       "author": "Tony",
       "rating": null,
       "comment": "Mix entre un mode histoire de Minecraft en 2D, un Zelda, un personnage qui devient plus puissant, un peu artistique. Why not."
+    },
+    {
+      "author": "Maxime",
+      "rating": 7,
+      "comment": "a l'air sympa",
+      "date": "2026-08-26"
     }
   ],
   "conan-exiles": [],
