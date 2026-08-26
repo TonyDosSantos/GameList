@@ -31,6 +31,12 @@ const REVIEWS = {
       "rating": 9,
       "comment": "Test Comm 2 - changement de note",
       "date": "2026-08-26"
+    },
+    {
+      "author": "Maxime",
+      "rating": 10,
+      "comment": "Ma vrai note",
+      "date": "2026-08-26"
     }
   ],
   "core-keeper": [
