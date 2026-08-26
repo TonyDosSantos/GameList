@@ -74,11 +74,23 @@ function hasReviewed(game, author) {
   return reviewsBy(game, author).length > 0;
 }
 
+// Seule la note la plus récente d'une personne compte : les précédentes
+// restent lisibles dans le fil, mais ne pèsent plus nulle part.
 function latestRating(game, author) {
   const rated = reviewsBy(game, author).filter(
     (r) => typeof r.rating === "number"
   );
-  return rated.length ? rated[rated.length - 1].rating : null;
+  if (rated.length === 0) return null;
+
+  // `suivant` vient après `courant` dans le fichier. Quand les deux portent
+  // une date, c'est elle qui tranche ; sinon l'ordre du fichier fait foi,
+  // les avis y étant empilés au fur et à mesure.
+  const plusRecent = (courant, suivant) =>
+    courant.date && suivant.date && suivant.date < courant.date
+      ? courant
+      : suivant;
+
+  return rated.reduce(plusRecent).rating;
 }
 
 // Moyenne des notes courantes de chacun (et non de tous les commentaires,
@@ -240,11 +252,14 @@ function renderCard(game) {
               : `${author} · ${count} commentaire${count > 1 ? "s" : ""}${
                   rating !== null ? ` · ${rating}/10` : ""
                 }`;
+          // Pas d'exposant avec le nombre de commentaires : collé à la note,
+          // il se lisait comme une puissance. Le compte reste dans l'infobulle
+          // et dans le fil de la fiche.
           return `<span class="reviewer-pill ${
             count ? "has-review" : ""
           }" title="${escapeHtml(title)}">${escapeHtml(
             author[0]
-          )} ${value}${count > 1 ? `<sup>${count}</sup>` : ""}</span>`;
+          )} ${value}</span>`;
         }).join("")}
       </span>
     </div>

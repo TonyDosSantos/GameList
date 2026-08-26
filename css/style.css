@@ -477,10 +477,6 @@ main {
   font-weight: 600;
 }
 
-.reviewer-pill sup {
-  font-size: 0.6rem;
-  margin-left: 0.1rem;
-}
 
 /* Formulaire d'avis */
 .btn-primary,
