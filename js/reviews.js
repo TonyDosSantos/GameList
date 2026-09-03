@@ -50,6 +50,12 @@ const REVIEWS = {
       "rating": 7,
       "comment": "a l'air sympa",
       "date": "2026-08-26"
+    },
+    {
+      "author": "Maxime",
+      "rating": 7,
+      "comment": "Test Gael",
+      "date": "2026-09-03"
     }
   ],
   "conan-exiles": [],
